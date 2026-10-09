@@ -25,6 +25,7 @@ namespace OHOS {
 namespace ACELite {
 
 HcfResult ParseUint8ArrayToBlob(JSIValue value, HcfBlob *blob);
+HcfResult ParseUint8ArrayToDatablob(JSIValue value, HcfBlob *blob);
 JSIValue ConstructJSIReturnResult(const HcfBlob *blob);
 
 }  // namespace ACELite

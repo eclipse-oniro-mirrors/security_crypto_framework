@@ -42,14 +42,12 @@ static bool IsWearableSupportedAlgo(const char *alg)
 static bool CheckSymKeyGeneratorArgs(const JSIValue *args, uint8_t argsNum, char **alg, JSIValue *errResult)
 {
     if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("CreateSymKeyGenerator args is err!");
         *errResult = JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS),
             "CreateSymKeyGenerator args is err!");
         return false;
     }
     *alg = JSI::ValueToString(args[0]);
     if (*alg == nullptr) {
-        LOGE("CreateSymKeyGenerator alg is null!");
         *errResult = JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS),
             "CreateSymKeyGenerator alg is null!");
         return false;
@@ -75,7 +73,7 @@ JSIValue CryptoFrameworkLiteModule::CreateSymKeyGenerator(const JSIValue thisVal
     HcfSymKeyGenerator *generator = nullptr;
     HcfResult res = HcfSymKeyGeneratorCreate(alg, &generator);
     if (res != HCF_SUCCESS) {
-        LOGE("CreateSymKeyGenerator HcfSymKeyGeneratorCreate err res %d!", res);
+        LOGE("CreateSymKeyGenerator err %d!", res);
         JSI::ReleaseString(alg);
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(res),
             "CreateSymKeyGenerator HcfSymKeyGeneratorCreate err!");
@@ -112,7 +110,6 @@ JSIValue CryptoFrameworkLiteModule::GenerateSymKey(const JSIValue thisVal, const
     (void)thisVal;
     (void)args;
     (void)argsNum;
-    LOGE("GenerateSymKey is not supported on mini device.");
     return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT),
         "GenerateSymKey is not supported on mini device.");
 }
@@ -122,15 +119,40 @@ JSIValue CryptoFrameworkLiteModule::GenerateSymKeySync(const JSIValue thisVal, c
     (void)thisVal;
     (void)args;
     (void)argsNum;
-    LOGE("GenerateSymKeySync is not supported on mini device.");
     return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT),
         "GenerateSymKeySync is not supported on mini device.");
+}
+
+static HcfResult DoConvertSymKeyCore(JSIValue thisVal, JSIValue keyDataVal, HcfSymKey **outKey)
+{
+    HcfSymKeyGenerator *generator =
+        reinterpret_cast<HcfSymKeyGenerator *>((uint32_t)JSI::GetNumberProperty(thisVal, "genObj"));
+    if (generator == nullptr) {
+        return HCF_INVALID_PARAMS;
+    }
+    HcfBlob keyBlob = { .data = nullptr, .len = 0 };
+    HcfResult errCode = ParseUint8ArrayToDatablob(keyDataVal, &keyBlob);
+    if (errCode != HCF_SUCCESS) {
+        return errCode;
+    }
+    HcfSymKey *key = nullptr;
+    HcfResult res = generator->convertSymKey(generator, &keyBlob, &key);
+    HcfBlobDataClearAndFree(&keyBlob);
+    if (res != HCF_SUCCESS) {
+        return res;
+    }
+    res = ListAddObjNode(JSI_ALG_SYM_KEY, static_cast<uint32_t>(reinterpret_cast<uintptr_t>(key)));
+    if (res != HCF_SUCCESS) {
+        HcfObjDestroy(static_cast<void *>(key));
+        return res;
+    }
+    *outKey = key;
+    return HCF_SUCCESS;
 }
 
 JSIValue CryptoFrameworkLiteModule::ConvertSymKey(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARGS_SIZE_TWO)) {
-        LOGE("ConvertSymKey args is err!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "ConvertSymKey args is err!");
     }
     if (args[ARRAY_INDEX_ONE] == nullptr) {
@@ -138,34 +160,12 @@ JSIValue CryptoFrameworkLiteModule::ConvertSymKey(const JSIValue thisVal, const 
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT),
             "ConvertSymKey promise is not supported.");
     }
-    HcfSymKeyGenerator *generator =
-        reinterpret_cast<HcfSymKeyGenerator *>((uint32_t)JSI::GetNumberProperty(thisVal, "genObj"));
-    if (generator == nullptr) {
-        LOGE("ConvertSymKey generator is null!");
-        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], HCF_INVALID_PARAMS, JSI::CreateNull());
-        return JSI::CreateUndefined();
-    }
     JSIValue inValue = JSI::GetNamedProperty(args[ARRAY_INDEX_ZERO], "data");
-    HcfBlob keyBlob = { .data = nullptr, .len = 0 };
-    HcfResult errCode = ParseUint8ArrayToBlob(inValue, &keyBlob);
-    if (errCode != HCF_SUCCESS) {
-        LOGE("ConvertSymKey keyBlob is null!");
-        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], HCF_INVALID_PARAMS, JSI::CreateNull());
-        return JSI::CreateUndefined();
-    }
     HcfSymKey *key = nullptr;
-    HcfResult res = generator->convertSymKey(generator, &keyBlob, &key);
-    HcfBlobDataClearAndFree(&keyBlob);
-    if (res != HCF_SUCCESS) {
-        LOGE("ConvertSymKey convertSymKey err %d!", res);
-        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], res, JSI::CreateNull());
-        return JSI::CreateUndefined();
-    }
-    res = ListAddObjNode(JSI_ALG_SYM_KEY, static_cast<uint32_t>(reinterpret_cast<uintptr_t>(key)));
-    if (res != HCF_SUCCESS) {
-        LOGE("sym key add node is %d err!", res);
-        HcfObjDestroy(static_cast<void *>(key));
-        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], res, JSI::CreateNull());
+    HcfResult ret = DoConvertSymKeyCore(thisVal, inValue, &key);
+    if (ret != HCF_SUCCESS) {
+        LOGE("ConvertSymKey err %d!", ret);
+        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], ret, JSI::CreateNull());
         return JSI::CreateUndefined();
     }
     JSIValue keyObj = BuildSymKeyObject(key);
@@ -176,35 +176,14 @@ JSIValue CryptoFrameworkLiteModule::ConvertSymKey(const JSIValue thisVal, const 
 JSIValue CryptoFrameworkLiteModule::ConvertSymKeySync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("ConvertSymKeySync args is err!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "ConvertSymKeySync args is err!");
     }
-    HcfSymKeyGenerator *generator =
-        reinterpret_cast<HcfSymKeyGenerator *>((uint32_t)JSI::GetNumberProperty(thisVal, "genObj"));
-    if (generator == nullptr) {
-        LOGE("ConvertSymKeySync generator is null!");
-        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS),
-            "ConvertSymKeySync generator is null!");
-    }
     JSIValue inValue = JSI::GetNamedProperty(args[ARRAY_INDEX_ZERO], "data");
-    HcfBlob keyBlob = { .data = nullptr, .len = 0 };
-    HcfResult errCode = ParseUint8ArrayToBlob(inValue, &keyBlob);
-    if (errCode != HCF_SUCCESS) {
-        LOGE("ConvertSymKeySync keyBlob is null!");
-        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(errCode), "ConvertSymKeySync keyBlob is null!");
-    }
     HcfSymKey *key = nullptr;
-    HcfResult res = generator->convertSymKey(generator, &keyBlob, &key);
-    HcfBlobDataClearAndFree(&keyBlob);
-    if (res != HCF_SUCCESS) {
-        LOGE("ConvertSymKeySync convertSymKey err %d!", res);
-        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(res), "ConvertSymKeySync convertSymKey err!");
-    }
-    res = ListAddObjNode(JSI_ALG_SYM_KEY, static_cast<uint32_t>(reinterpret_cast<uintptr_t>(key)));
-    if (res != HCF_SUCCESS) {
-        LOGE("sym key add node is %d err!", res);
-        HcfObjDestroy(static_cast<void *>(key));
-        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(res), "sym key add node err!");
+    HcfResult ret = DoConvertSymKeyCore(thisVal, inValue, &key);
+    if (ret != HCF_SUCCESS) {
+        LOGE("ConvertSymKeySync err %d!", ret);
+        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(ret), "ConvertSymKeySync err!");
     }
     return BuildSymKeyObject(key);
 }

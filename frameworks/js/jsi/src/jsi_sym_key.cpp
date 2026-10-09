@@ -69,7 +69,6 @@ JSIValue CryptoFrameworkLiteModule::ClearSymKeyMem(const JSIValue thisVal, const
     (void)argsNum;
     HcfSymKey *key = reinterpret_cast<HcfSymKey *>((uint32_t)JSI::GetNumberProperty(thisVal, "keyObj"));
     if (key == nullptr) {
-        LOGE("ClearSymKeyMem key is null!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "ClearSymKeyMem key is null!");
     }
     key->clearMem(key);

@@ -64,27 +64,23 @@ JSIValue CryptoFrameworkLiteModule::CreateRandom(const JSIValue thisVal, const J
 JSIValue CryptoFrameworkLiteModule::GenerateRandom(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARGS_SIZE_TWO) || (args[ARRAY_INDEX_ONE] == nullptr)) {
-        LOGE("GenerateRandom params is err!");
         return JSI::CreateUndefined();
     }
 
     HcfRand *randObj = reinterpret_cast<HcfRand *>((uint32_t)JSI::GetNumberProperty(thisVal, "randObj"));
     if (randObj == nullptr) {
-        LOGE("GenerateRandom randObj is null!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], HCF_INVALID_PARAMS, JSI::CreateUndefined());
         return JSI::CreateUndefined();
     }
 
     int32_t numBytes = (int32_t)JSI::ValueToNumber(args[0]);
     if (numBytes <= 0) {
-        LOGE("GenerateRandom numBytes too small!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], HCF_INVALID_PARAMS, JSI::CreateUndefined());
         return JSI::CreateUndefined();
     }
     HcfBlob randBlob = { .data = nullptr, .len = 0 };
     HcfResult res = randObj->generateRandom(randObj, numBytes, &randBlob);
     if (res != HCF_SUCCESS) {
-        LOGE("GenerateRandom randObj not is success!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], res, JSI::CreateUndefined());
         return JSI::CreateUndefined();
     }
@@ -99,25 +95,21 @@ JSIValue CryptoFrameworkLiteModule::GenerateRandom(const JSIValue thisVal, const
 JSIValue CryptoFrameworkLiteModule::GenerateRandomSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("GenerateRandomSync params is err");
         return ThrowErrorCodeResult(HCF_INVALID_PARAMS);
     }
 
     HcfRand *randObj = reinterpret_cast<HcfRand *>((uint32_t)JSI::GetNumberProperty(thisVal, "randObj"));
     if (randObj == nullptr) {
-        LOGE("GenerateRandom randObj is null!!");
         return ThrowErrorCodeResult(HCF_INVALID_PARAMS);
     }
 
     int32_t numBytes = (int32_t)JSI::ValueToNumber(args[0]);
     if (numBytes <= 0) {
-        LOGE("GenerateRandomSync numBytes too small!");
         return ThrowErrorCodeResult(HCF_INVALID_PARAMS);
     }
     HcfBlob randBlob = { .data = nullptr, .len = 0 };
     HcfResult res = randObj->generateRandom(randObj, numBytes, &randBlob);
     if (res != HCF_SUCCESS) {
-        LOGE("GenerateRandomSync randObj not is success!");
         HcfBlobDataClearAndFree(&randBlob);
         return ThrowErrorCodeResult(res);
     }
@@ -131,25 +123,21 @@ JSIValue CryptoFrameworkLiteModule::SetSeed(const JSIValue thisVal, const JSIVal
 {
     HcfRand *randObj = reinterpret_cast<HcfRand *>((uint32_t)JSI::GetNumberProperty(thisVal, "randObj"));
     if (randObj == nullptr) {
-        LOGE("SetSeed randObj is null!!");
         return ThrowErrorCodeResult(HCF_INVALID_PARAMS);
     }
     if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("SetSeed params is null");
         return ThrowErrorCodeResult(HCF_INVALID_PARAMS);
     }
     JSIValue inVlaue = JSI::GetNamedProperty(args[ARRAY_INDEX_ZERO], "data");
     HcfBlob seedBlob = { .data = nullptr, .len = 0 };
     HcfResult errCode = ParseUint8ArrayToBlob(inVlaue, &seedBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("SetSeed seedBlob is null!");
         return ThrowErrorCodeResult(HCF_ERR_MALLOC);
     }
 
     HcfResult res = randObj->setSeed(randObj, &seedBlob);
     HcfBlobDataClearAndFree(&seedBlob);
     if (res != HCF_SUCCESS) {
-        LOGE("setSeed randObj not is success!");
         return ThrowErrorCodeResult(res);
     }
 

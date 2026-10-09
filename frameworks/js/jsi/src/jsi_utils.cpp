@@ -61,6 +61,43 @@ HcfResult ParseUint8ArrayToBlob(JSIValue value, HcfBlob *blob)
     return ret;
 }
 
+HcfResult ParseUint8ArrayToDatablob(JSIValue value, HcfBlob *blob)
+{
+    if (!JSI::ValueIsTypedArray(value) || (blob == nullptr)) {
+        LOGE("value is not a typed array!");
+        return HCF_INVALID_PARAMS;
+    }
+    TypedArrayType arrayType;
+    size_t arraySize = 0;
+    size_t byteOffset = 0;
+    JSIValue arrayBuffer = nullptr;
+    HcfResult ret = HCF_SUCCESS;
+    do {
+        uint8_t *dataArray = JSI::GetTypedArrayInfo(value, arrayType, arraySize, arrayBuffer, byteOffset);
+        if (dataArray == nullptr) {
+            ret = HCF_ERR_CRYPTO_OPERATION;
+            break;
+        }
+        if ((arrayType != TypedArrayType::JSI_UINT8_ARRAY) || (arraySize == 0)) {
+            LOGE("value is not a uint8 array");
+            ret = HCF_INVALID_PARAMS;
+            break;
+        }
+        blob->data = reinterpret_cast<uint8_t *>(HcfMalloc(arraySize, 0));
+        if (blob->data == nullptr) {
+            ret = HCF_ERR_MALLOC;
+            break;
+        }
+        memcpy_s(blob->data, arraySize, dataArray + byteOffset, arraySize);
+        blob->len = arraySize;
+    } while (0);
+    if (arrayBuffer != nullptr) {
+        JSI::ReleaseValue(arrayBuffer);
+        arrayBuffer = nullptr;
+    }
+    return ret;
+}
+
 JSIValue ConstructJSIReturnResult(const HcfBlob *blob)
 {
     JSIValue res;

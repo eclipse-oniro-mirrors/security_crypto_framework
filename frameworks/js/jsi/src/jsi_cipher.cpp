@@ -29,6 +29,17 @@
 namespace OHOS {
 namespace ACELite {
 
+#define GCM_TAG_LEN_4 4
+#define GCM_TAG_LEN_8 8
+#define GCM_TAG_LEN_12 12
+#define GCM_DEFAULT_TAG_LEN 16
+
+static bool IsValidGcmTagLen(int32_t tagLen)
+{
+    return (tagLen == GCM_TAG_LEN_4) || (tagLen == GCM_TAG_LEN_8) ||
+        (tagLen >= GCM_TAG_LEN_12 && tagLen <= GCM_DEFAULT_TAG_LEN);
+}
+
 static const char *GetIvParamsSpecType(void)
 {
     return "IvParamsSpec";
@@ -65,7 +76,10 @@ static HcfResult ParseNamedPropertyToBlob(JSIValue obj, const char *name, HcfBlo
         }
         return HCF_INVALID_PARAMS;
     }
-    HcfResult ret = ParseUint8ArrayToBlob(dataValue, blob);
+    HcfResult ret = ParseUint8ArrayToDatablob(dataValue, blob);
+    if (ret != HCF_SUCCESS) {
+        LOGE("ParseNamedPropertyToBlob parse %{public}s to blob failed, ret %d!", name, ret);
+    }
     JSI::ReleaseValue(dataValue);
     if (isWrapped) {
         JSI::ReleaseValue(value);
@@ -77,12 +91,12 @@ static HcfResult BuildIvParamsSpec(JSIValue paramsObj, HcfParamsSpec **paramsSpe
 {
     HcfIvParamsSpec *ivSpec = (HcfIvParamsSpec *)HcfMalloc(sizeof(HcfIvParamsSpec), 0);
     if (ivSpec == nullptr) {
-        LOGE("malloc ivSpec failed!");
+        LOGE("BuildIvParamsSpec malloc failed!");
         return HCF_ERR_MALLOC;
     }
     HcfResult ret = ParseNamedPropertyToBlob(paramsObj, "iv", &ivSpec->iv, false);
     if (ret != HCF_SUCCESS) {
-        LOGE("parse iv failed!");
+        LOGE("BuildIvParamsSpec parse iv failed, ret %d!", ret);
         HcfFree(ivSpec);
         return ret;
     }
@@ -95,18 +109,18 @@ static HcfResult BuildAeadParamsSpec(JSIValue paramsObj, HcfParamsSpec **paramsS
 {
     HcfAeadParamsSpec *aeadSpec = (HcfAeadParamsSpec *)HcfMalloc(sizeof(HcfAeadParamsSpec), 0);
     if (aeadSpec == nullptr) {
-        LOGE("malloc aeadSpec failed!");
+        LOGE("BuildAeadParamsSpec malloc failed!");
         return HCF_ERR_MALLOC;
     }
     HcfResult ret = ParseNamedPropertyToBlob(paramsObj, "nonce", &aeadSpec->nonce, false);
     if (ret != HCF_SUCCESS) {
-        LOGE("parse aead nonce failed!");
+        LOGE("BuildAeadParamsSpec parse nonce failed, ret %d!", ret);
         HcfFree(aeadSpec);
         return ret;
     }
     ret = ParseNamedPropertyToBlob(paramsObj, "aad", &aeadSpec->aad, true);
     if (ret != HCF_SUCCESS) {
-        LOGE("parse aead aad failed!");
+        LOGE("BuildAeadParamsSpec parse aad failed, ret %d!", ret);
         HcfBlobDataFree(&aeadSpec->nonce);
         HcfFree(aeadSpec);
         return ret;
@@ -115,9 +129,16 @@ static HcfResult BuildAeadParamsSpec(JSIValue paramsObj, HcfParamsSpec **paramsS
     if (JSI::ValueIsNumber(tagLenVal)) {
         aeadSpec->tagLen = static_cast<int32_t>(JSI::ValueToNumber(tagLenVal));
     } else {
-        aeadSpec->tagLen = 0;
+        aeadSpec->tagLen = GCM_DEFAULT_TAG_LEN;
     }
     JSI::ReleaseValue(tagLenVal);
+    if (!IsValidGcmTagLen(aeadSpec->tagLen)) {
+        LOGE("BuildAeadParamsSpec invalid tagLen %d!", aeadSpec->tagLen);
+        HcfBlobDataFree(&aeadSpec->nonce);
+        HcfBlobDataFree(&aeadSpec->aad);
+        HcfFree(aeadSpec);
+        return HCF_INVALID_PARAMS;
+    }
     aeadSpec->base.getType = GetAeadParamsSpecType;
     *paramsSpec = (HcfParamsSpec *)aeadSpec;
     return HCF_SUCCESS;
@@ -143,13 +164,13 @@ static void FreeParamsSpec(HcfParamsSpec *paramsSpec)
 static bool CheckCipherArgs(const JSIValue *args, uint8_t argsNum, char **transformation, JSIValue *errResult)
 {
     if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("CreateCipher args is err!");
+        LOGE("CheckCipherArgs args invalid, args is null or argsNum %u != 1!", argsNum);
         *errResult = JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "CreateCipher args is err!");
         return false;
     }
     *transformation = JSI::ValueToString(args[0]);
-    if (*transformation == nullptr) {
-        LOGE("CreateCipher transformation is null!");
+    if (*transformation == nullptr || strlen(*transformation) == 0) {
+        LOGE("CheckCipherArgs transformation is null!");
         *errResult = JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS),
             "CreateCipher transformation is null!");
         return false;
@@ -168,7 +189,7 @@ JSIValue CryptoFrameworkLiteModule::CreateCipher(const JSIValue thisVal, const J
     HcfCipher *cipher = nullptr;
     HcfResult res = HcfCipherCreate(transformation, &cipher);
     if (res != HCF_SUCCESS) {
-        LOGE("CreateCipher HcfCipherCreate err res %d!", res);
+        LOGE("CreateCipher HcfCipherCreate err, transformation %{public}s, res %d!", transformation, res);
         JSI::ReleaseString(transformation);
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(res), "CreateCipher HcfCipherCreate err!");
     }
@@ -179,7 +200,6 @@ JSIValue CryptoFrameworkLiteModule::CreateCipher(const JSIValue thisVal, const J
         JSI::ReleaseString(transformation);
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(res), "cipher add node err!");
     }
-    int32_t isGcm = (strstr(transformation, "GCM") != nullptr) ? 1 : 0;
     JSI::ReleaseString(transformation);
     JSIValue serviceObj = JSI::CreateObject();
     JSIValue initFn = JSI::CreateFunction(CipherInit);
@@ -188,20 +208,24 @@ JSIValue CryptoFrameworkLiteModule::CreateCipher(const JSIValue thisVal, const J
     JSIValue doFinalFn = JSI::CreateFunction(CipherDoFinal);
     JSIValue updateSync = JSI::CreateFunction(CipherUpdateSync);
     JSIValue doFinalSync = JSI::CreateFunction(CipherDoFinalSync);
+    JSIValue setCipherSpecFn = JSI::CreateFunction(SetCipherSpec);
+    JSIValue getCipherSpecFn = JSI::CreateFunction(GetCipherSpec);
     JSI::SetNamedProperty(serviceObj, "init", initFn);
     JSI::SetNamedProperty(serviceObj, "initSync", initSyncFn);
     JSI::SetNamedProperty(serviceObj, "update", updateFn);
     JSI::SetNamedProperty(serviceObj, "doFinal", doFinalFn);
     JSI::SetNamedProperty(serviceObj, "updateSync", updateSync);
     JSI::SetNamedProperty(serviceObj, "doFinalSync", doFinalSync);
+    JSI::SetNamedProperty(serviceObj, "setCipherSpec", setCipherSpecFn);
+    JSI::SetNamedProperty(serviceObj, "getCipherSpec", getCipherSpecFn);
     const char *algo = cipher->getAlgorithm(cipher);
     if (algo != nullptr) {
         JSI::SetStringProperty(serviceObj, "algName", algo);
     }
     JSI::SetNumberProperty(serviceObj, "cipherObj",
         static_cast<double>(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(cipher))));
-    JSI::SetNumberProperty(serviceObj, "isGcm", static_cast<double>(isGcm));
-    JSI::ReleaseValueList(initFn, initSyncFn, updateFn, doFinalFn, updateSync, doFinalSync, ARGS_END);
+    JSI::ReleaseValueList(initFn, initSyncFn, updateFn, doFinalFn, updateSync, doFinalSync,
+        setCipherSpecFn, getCipherSpecFn, ARGS_END);
     return serviceObj;
 }
 
@@ -213,21 +237,64 @@ static HcfSymKey *ExtractCipherKey(JSIValue keyArg)
     return reinterpret_cast<HcfSymKey *>((uint32_t)JSI::GetNumberProperty(keyArg, "keyObj"));
 }
 
-static HcfResult BuildCipherParamsSpec(JSIValue paramsVal, bool isGcm, HcfParamsSpec **paramsSpec)
+static HcfResult BuildCipherParamsSpec(JSIValue paramsVal, HcfParamsSpec **paramsSpec)
 {
     if (!JSI::ValueIsObject(paramsVal)) {
         return HCF_SUCCESS;
     }
-    if (isGcm) {
-        return BuildAeadParamsSpec(paramsVal, paramsSpec);
+    char *algName = JSI::ValueToString(JSI::GetNamedProperty(paramsVal, "algName"));
+    if (algName == nullptr) {
+        LOGE("BuildCipherParamsSpec algName is null!");
+        return HCF_INVALID_PARAMS;
     }
-    return BuildIvParamsSpec(paramsVal, paramsSpec);
+    HcfResult ret;
+    if (strcmp(algName, "GcmParamsSpec") == 0) {
+        LOGE("GcmParamsSpec is not supported!");
+        ret = HCF_NOT_SUPPORT;
+    } else if (strcmp(algName, "AeadParamsSpec") == 0) {
+        ret = BuildAeadParamsSpec(paramsVal, paramsSpec);
+    } else if (strcmp(algName, "IvParamsSpec") == 0) {
+        ret = BuildIvParamsSpec(paramsVal, paramsSpec);
+    } else {
+        LOGE("Unsupported params spec: %{public}s", algName);
+        ret = HCF_NOT_SUPPORT;
+    }
+    JSI::ReleaseString(algName);
+    return ret;
+}
+
+static HcfResult DoCipherInitCore(JSIValue thisVal, JSIValue opModeVal, JSIValue keyArg, JSIValue paramsVal)
+{
+    HcfCipher *cipher =
+        reinterpret_cast<HcfCipher *>((uint32_t)JSI::GetNumberProperty(thisVal, "cipherObj"));
+    if (cipher == nullptr) {
+        LOGE("DoCipherInitCore cipher is null!");
+        return HCF_INVALID_PARAMS;
+    }
+    int32_t opMode = static_cast<int32_t>(JSI::ValueToNumber(opModeVal));
+    HcfSymKey *key = ExtractCipherKey(keyArg);
+    if (key == nullptr) {
+        LOGE("DoCipherInitCore key is null, opMode %d!", opMode);
+        return HCF_INVALID_PARAMS;
+    }
+    HcfParamsSpec *paramsSpec = nullptr;
+    HcfResult ret = BuildCipherParamsSpec(paramsVal, &paramsSpec);
+    if (ret != HCF_SUCCESS) {
+        LOGE("DoCipherInitCore BuildCipherParamsSpec failed, opMode %d, ret %d!", opMode, ret);
+        return ret;
+    }
+    ret = cipher->init(cipher, static_cast<enum HcfCryptoMode>(opMode), (HcfKey *)key, paramsSpec);
+    if (ret != HCF_SUCCESS) {
+        LOGE("DoCipherInitCore cipher init failed, opMode %d, ret %d!", opMode, ret);
+    }
+    FreeParamsSpec(paramsSpec);
+    return ret;
 }
 
 JSIValue CryptoFrameworkLiteModule::CipherInit(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARGS_SIZE_FOUR)) {
-        LOGE("CipherInit args is err!");
+        LOGE("CipherInit args invalid, argsNum %u != %d!", argsNum, ARGS_SIZE_FOUR);
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "CipherInit args is err!");
     }
     if (args[ARRAY_INDEX_THREE] == nullptr) {
@@ -235,77 +302,54 @@ JSIValue CryptoFrameworkLiteModule::CipherInit(const JSIValue thisVal, const JSI
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT),
             "CipherInit promise is not supported.");
     }
-    HcfCipher *cipher =
-        reinterpret_cast<HcfCipher *>((uint32_t)JSI::GetNumberProperty(thisVal, "cipherObj"));
-    if (cipher == nullptr) {
-        LOGE("CipherInit cipher is null!");
-        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_THREE], HCF_INVALID_PARAMS, JSI::CreateNull());
-        return JSI::CreateUndefined();
-    }
-    int32_t opMode = static_cast<int32_t>(JSI::ValueToNumber(args[ARRAY_INDEX_ZERO]));
-    HcfSymKey *key = ExtractCipherKey(args[ARRAY_INDEX_ONE]);
-    if (key == nullptr) {
-        LOGE("CipherInit key is null!");
-        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_THREE], HCF_INVALID_PARAMS, JSI::CreateNull());
-        return JSI::CreateUndefined();
-    }
-    HcfParamsSpec *paramsSpec = nullptr;
-    bool isGcm = (JSI::GetNumberProperty(thisVal, "isGcm") != 0);
-    HcfResult ret = BuildCipherParamsSpec(args[ARRAY_INDEX_TWO], isGcm, &paramsSpec);
+    HcfResult ret = DoCipherInitCore(thisVal, args[ARRAY_INDEX_ZERO], args[ARRAY_INDEX_ONE], args[ARRAY_INDEX_TWO]);
     if (ret != HCF_SUCCESS) {
-        LOGE("CipherInit build params failed %d!", ret);
-        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_THREE], ret, JSI::CreateNull());
-        return JSI::CreateUndefined();
+        LOGE("CipherInit err %d!", ret);
     }
-    ret = cipher->init(cipher, static_cast<enum HcfCryptoMode>(opMode), (HcfKey *)key, paramsSpec);
-    FreeParamsSpec(paramsSpec);
-    if (ret != HCF_SUCCESS) {
-        LOGE("CipherInit cipher init err %d!", ret);
-        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_THREE], ret, JSI::CreateNull());
-        return JSI::CreateUndefined();
-    }
-    CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_THREE], HCF_SUCCESS, JSI::CreateNull());
+    CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_THREE], ret, JSI::CreateNull());
     return JSI::CreateUndefined();
 }
 
 JSIValue CryptoFrameworkLiteModule::CipherInitSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARGS_SIZE_THREE)) {
-        LOGE("CipherInitSync args is err!");
+        LOGE("CipherInitSync args invalid, argsNum %u != %d!", argsNum, ARGS_SIZE_THREE);
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "CipherInitSync args is err!");
     }
+    HcfResult ret = DoCipherInitCore(thisVal, args[ARRAY_INDEX_ZERO], args[ARRAY_INDEX_ONE], args[ARRAY_INDEX_TWO]);
+    if (ret != HCF_SUCCESS) {
+        LOGE("CipherInitSync err %d!", ret);
+    }
+    return ThrowErrorCodeResult(ret);
+}
+
+static HcfResult DoCipherUpdateCore(JSIValue thisVal, JSIValue dataArg, HcfBlob *outBlob)
+{
     HcfCipher *cipher =
         reinterpret_cast<HcfCipher *>((uint32_t)JSI::GetNumberProperty(thisVal, "cipherObj"));
     if (cipher == nullptr) {
-        LOGE("CipherInitSync cipher is null!");
-        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "CipherInitSync cipher is null!");
+        LOGE("DoCipherUpdateCore cipher is null!");
+        return HCF_INVALID_PARAMS;
     }
-    int32_t opMode = static_cast<int32_t>(JSI::ValueToNumber(args[ARRAY_INDEX_ZERO]));
-    HcfSymKey *key = ExtractCipherKey(args[ARRAY_INDEX_ONE]);
-    if (key == nullptr) {
-        LOGE("CipherInitSync key is null!");
-        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "CipherInitSync key is null!");
+    JSIValue inValue = JSI::GetNamedProperty(dataArg, "data");
+    HcfBlob inBlob = { .data = nullptr, .len = 0 };
+    HcfResult errCode = ParseUint8ArrayToDatablob(inValue, &inBlob);
+    if (errCode != HCF_SUCCESS) {
+        LOGE("DoCipherUpdateCore parse input blob failed, ret %d!", errCode);
+        return errCode;
     }
-    HcfParamsSpec *paramsSpec = nullptr;
-    bool isGcm = (JSI::GetNumberProperty(thisVal, "isGcm") != 0);
-    HcfResult ret = BuildCipherParamsSpec(args[ARRAY_INDEX_TWO], isGcm, &paramsSpec);
-    if (ret != HCF_SUCCESS) {
-        LOGE("CipherInitSync build params failed %d!", ret);
-        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(ret), "CipherInitSync build params failed!");
+    errCode = cipher->update(cipher, &inBlob, outBlob);
+    if (errCode != HCF_SUCCESS) {
+        LOGE("DoCipherUpdateCore cipher update failed, ret %d!", errCode);
     }
-    ret = cipher->init(cipher, static_cast<enum HcfCryptoMode>(opMode), (HcfKey *)key, paramsSpec);
-    FreeParamsSpec(paramsSpec);
-    if (ret != HCF_SUCCESS) {
-        LOGE("CipherInitSync cipher init err %d!", ret);
-        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(ret), "CipherInitSync cipher init err!");
-    }
-    return ThrowErrorCodeResult(HCF_SUCCESS);
+    HcfBlobDataClearAndFree(&inBlob);
+    return errCode;
 }
 
 JSIValue CryptoFrameworkLiteModule::CipherUpdate(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARGS_SIZE_TWO)) {
-        LOGE("CipherUpdate args is err!");
+        LOGE("CipherUpdate args invalid, argsNum %u != %d!", argsNum, ARGS_SIZE_TWO);
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "CipherUpdate args is err!");
     }
     if (args[ARRAY_INDEX_ONE] == nullptr) {
@@ -313,26 +357,10 @@ JSIValue CryptoFrameworkLiteModule::CipherUpdate(const JSIValue thisVal, const J
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT),
             "CipherUpdate promise is not supported.");
     }
-    HcfCipher *cipher =
-        reinterpret_cast<HcfCipher *>((uint32_t)JSI::GetNumberProperty(thisVal, "cipherObj"));
-    if (cipher == nullptr) {
-        LOGE("CipherUpdate cipher is null!");
-        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], HCF_INVALID_PARAMS, JSI::CreateNull());
-        return JSI::CreateUndefined();
-    }
-    JSIValue inValue = JSI::GetNamedProperty(args[ARRAY_INDEX_ZERO], "data");
-    HcfBlob inBlob = { .data = nullptr, .len = 0 };
-    HcfResult errCode = ParseUint8ArrayToBlob(inValue, &inBlob);
-    if (errCode != HCF_SUCCESS) {
-        LOGE("CipherUpdate inBlob is null!");
-        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], HCF_INVALID_PARAMS, JSI::CreateNull());
-        return JSI::CreateUndefined();
-    }
     HcfBlob outBlob = { .data = nullptr, .len = 0 };
-    errCode = cipher->update(cipher, &inBlob, &outBlob);
-    HcfBlobDataClearAndFree(&inBlob);
+    HcfResult errCode = DoCipherUpdateCore(thisVal, args[ARRAY_INDEX_ZERO], &outBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("CipherUpdate update err %d!", errCode);
+        LOGE("CipherUpdate err %d!", errCode);
         HcfBlobDataClearAndFree(&outBlob);
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], errCode, JSI::CreateNull());
         return JSI::CreateUndefined();
@@ -345,31 +373,16 @@ JSIValue CryptoFrameworkLiteModule::CipherUpdate(const JSIValue thisVal, const J
 
 JSIValue CryptoFrameworkLiteModule::CipherUpdateSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
-    if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("CipherUpdateSync args is err!");
+    if ((args == nullptr) || (argsNum != ARGS_SIZE_ONE)) {
+        LOGE("CipherUpdateSync args invalid, argsNum %u != %d!", argsNum, ARGS_SIZE_ONE);
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "CipherUpdateSync args is err!");
     }
-    HcfCipher *cipher =
-        reinterpret_cast<HcfCipher *>((uint32_t)JSI::GetNumberProperty(thisVal, "cipherObj"));
-    if (cipher == nullptr) {
-        LOGE("CipherUpdateSync cipher is null!");
-        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS),
-            "CipherUpdateSync cipher is null!");
-    }
-    JSIValue inValue = JSI::GetNamedProperty(args[ARRAY_INDEX_ZERO], "data");
-    HcfBlob inBlob = { .data = nullptr, .len = 0 };
-    HcfResult errCode = ParseUint8ArrayToBlob(inValue, &inBlob);
-    if (errCode != HCF_SUCCESS) {
-        LOGE("CipherUpdateSync inBlob is null!");
-        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(errCode), "CipherUpdateSync inBlob is null!");
-    }
     HcfBlob outBlob = { .data = nullptr, .len = 0 };
-    errCode = cipher->update(cipher, &inBlob, &outBlob);
-    HcfBlobDataClearAndFree(&inBlob);
+    HcfResult errCode = DoCipherUpdateCore(thisVal, args[ARRAY_INDEX_ZERO], &outBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("CipherUpdateSync update err %d!", errCode);
+        LOGE("CipherUpdateSync err %d!", errCode);
         HcfBlobDataClearAndFree(&outBlob);
-        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(errCode), "CipherUpdateSync update err!");
+        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(errCode), "CipherUpdateSync err!");
     }
     JSIValue result = ConstructJSIReturnResult(&outBlob);
     HcfBlobDataClearAndFree(&outBlob);
@@ -379,7 +392,7 @@ JSIValue CryptoFrameworkLiteModule::CipherUpdateSync(const JSIValue thisVal, con
 JSIValue CryptoFrameworkLiteModule::CipherDoFinal(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARGS_SIZE_TWO)) {
-        LOGE("CipherDoFinal args is err!");
+        LOGE("CipherDoFinal args invalid, argsNum %u != %d!", argsNum, ARGS_SIZE_TWO);
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "CipherDoFinal args is err!");
     }
     if (args[ARRAY_INDEX_ONE] == nullptr) {
@@ -398,9 +411,9 @@ JSIValue CryptoFrameworkLiteModule::CipherDoFinal(const JSIValue thisVal, const 
     if (JSI::ValueIsObject(args[ARRAY_INDEX_ZERO])) {
         JSIValue inValue = JSI::GetNamedProperty(args[ARRAY_INDEX_ZERO], "data");
         if (JSI::ValueIsTypedArray(inValue)) {
-            HcfResult errCode = ParseUint8ArrayToBlob(inValue, &inBlob);
+            HcfResult errCode = ParseUint8ArrayToDatablob(inValue, &inBlob);
             if (errCode != HCF_SUCCESS) {
-                LOGE("CipherDoFinal inBlob parse failed!");
+                LOGE("CipherDoFinal parse input blob failed, ret %d!", errCode);
                 JSI::ReleaseValue(inValue);
                 CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], errCode, JSI::CreateNull());
                 return JSI::CreateUndefined();
@@ -436,9 +449,9 @@ JSIValue CryptoFrameworkLiteModule::CipherDoFinalSync(const JSIValue thisVal, co
     if ((args != nullptr) && (argsNum >= ARGS_SIZE_ONE) && JSI::ValueIsObject(args[ARRAY_INDEX_ZERO])) {
         JSIValue inValue = JSI::GetNamedProperty(args[ARRAY_INDEX_ZERO], "data");
         if (JSI::ValueIsTypedArray(inValue)) {
-            HcfResult errCode = ParseUint8ArrayToBlob(inValue, &inBlob);
+            HcfResult errCode = ParseUint8ArrayToDatablob(inValue, &inBlob);
             if (errCode != HCF_SUCCESS) {
-                LOGE("CipherDoFinalSync inBlob parse failed!");
+                LOGE("CipherDoFinalSync parse input blob failed, ret %d!", errCode);
                 JSI::ReleaseValue(inValue);
                 return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(errCode),
                     "CipherDoFinalSync inBlob parse failed!");
@@ -457,6 +470,22 @@ JSIValue CryptoFrameworkLiteModule::CipherDoFinalSync(const JSIValue thisVal, co
     JSIValue result = ConstructJSIReturnResult(&outBlob);
     HcfBlobDataClearAndFree(&outBlob);
     return result;
+}
+
+JSIValue CryptoFrameworkLiteModule::SetCipherSpec(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
+{
+    (void)thisVal;
+    (void)args;
+    (void)argsNum;
+    return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT), "SetCipherSpec is not supported!");
+}
+
+JSIValue CryptoFrameworkLiteModule::GetCipherSpec(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
+{
+    (void)thisVal;
+    (void)args;
+    (void)argsNum;
+    return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT), "GetCipherSpec is not supported!");
 }
 
 void CryptoFrameworkLiteModule::CipherDestroy(void)
