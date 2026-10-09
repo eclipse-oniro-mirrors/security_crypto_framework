@@ -190,7 +190,7 @@ static HcfResult HandleCmacAlgo(HcfMacImpl *macImpl, const HcfMacParamsSpec *par
     }
 
     if ((strcmp(cipherName, "AES128") != 0) && (strcmp(cipherName, "AES256") != 0)) {
-        LOGE("Unsupported cipher name: %{public}s, only support AES128 and AES256.", cipherName);
+        LOGE("unsupported cipher: %{public}s", cipherName);
         return HCF_INVALID_PARAMS;
     }
     *createSpiFunc = OpensslCmacSpiCreate;
@@ -218,7 +218,7 @@ static HcfResult DispatchMacAlgo(HcfMacImpl *macImpl, const HcfMacParamsSpec *pa
     if (strcmp(paramsSpec->algName, "HMAC") == 0) {
         res = HandleHmacAlgo(macImpl, paramsSpec, createSpiFunc);
     } else {
-        LOGE("Unsupported algorithm: %{public}s, only support HMAC!", paramsSpec->algName);
+        LOGE("unsupported algo: %{public}s", paramsSpec->algName);
     }
 #else
     if (strcmp(paramsSpec->algName, "CMAC") == 0) {

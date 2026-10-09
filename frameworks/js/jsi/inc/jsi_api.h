@@ -79,6 +79,8 @@ private:
     static JSIValue CipherUpdateSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
     static JSIValue CipherDoFinal(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
     static JSIValue CipherDoFinalSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue SetCipherSpec(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue GetCipherSpec(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
 
     static void MdDestroy(void);
     static void MacDestroy(void);

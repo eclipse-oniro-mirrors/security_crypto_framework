@@ -25,14 +25,14 @@
 #include "utils.h"
 #include "mbedtls_sym_key.h"
 #include "detailed_iv_params.h"
-#include "detailed_gcm_params.h"
 #include "detailed_aead_params.h"
 
 #define AES_BLOCK_SIZE 16
 #define AES_KEY_SIZE_128 16
 #define GCM_TAG_SIZE 16
 #define GCM_IV_MIN_LEN 1
-#define GCM_IV_MAX_LEN 128
+#define GCM_IV_MAX_LEN 16
+#define CBC_IV_LEN 16
 #define BUFFER_GROWTH_FACTOR 2
 
 typedef enum {
@@ -147,13 +147,7 @@ static HcfResult ParseGcmParamsType(HcfParamsSpec *params, HcfBlob **ivBlob, Hcf
     const char *typeName = (params->getType == NULL) ? NULL : params->getType();
     *tagBlob = NULL;
     *tagLen = 0;
-    if ((typeName != NULL) && (strcmp(typeName, "GcmParamsSpec") == 0)) {
-        HcfGcmParamsSpec *gcm = (HcfGcmParamsSpec *)params;
-        *ivBlob = &gcm->iv;
-        *aadBlob = &gcm->aad;
-        *tagBlob = &gcm->tag;
-        *tagLen = gcm->tag.len;
-    } else if ((typeName != NULL) && (strcmp(typeName, "AeadParamsSpec") == 0)) {
+    if ((typeName != NULL) && (strcmp(typeName, "AeadParamsSpec") == 0)) {
         HcfAeadParamsSpec *aead = (HcfAeadParamsSpec *)params;
         *ivBlob = &aead->nonce;
         *aadBlob = &aead->aad;
@@ -251,7 +245,7 @@ static HcfResult StoreIvParams(MbedtlsAesCipherSpiImpl *impl, HcfParamsSpec *par
         LOGE("iv params type is invalid!");
         return HCF_INVALID_PARAMS;
     }
-    if ((ivSpec->iv.data == NULL) || (ivSpec->iv.len != AES_BLOCK_SIZE)) {
+    if ((ivSpec->iv.data == NULL) || (ivSpec->iv.len != CBC_IV_LEN)) {
         LOGE("cbc iv is invalid!");
         return HCF_INVALID_PARAMS;
     }
@@ -269,15 +263,12 @@ static HcfResult EngineCipherInit(HcfCipherGeneratorSpi *self, enum HcfCryptoMod
     HcfKey *key, HcfParamsSpec *params)
 {
     if ((self == NULL) || (key == NULL)) {
-        LOGE("Invalid input parameter!");
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((const HcfObjectBase *)self, GetAesCipherClass())) {
-        LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((const HcfObjectBase *)key, MBEDTLS_SYM_KEY_CLASS)) {
-        LOGE("Sym key class is not match.");
         return HCF_INVALID_PARAMS;
     }
     MbedtlsAesCipherSpiImpl *impl = (MbedtlsAesCipherSpiImpl *)self;
@@ -287,7 +278,7 @@ static HcfResult EngineCipherInit(HcfCipherGeneratorSpi *self, enum HcfCryptoMod
         return HCF_INVALID_PARAMS;
     }
     if ((keyImpl->keyMaterial.data == NULL) || (keyImpl->keyMaterial.len != AES_KEY_SIZE_128)) {
-        LOGE("Key material is invalid, only support AES128.");
+        LOGE("bad key material");
         return HCF_ERR_PARAMETER_CHECK_FAILED;
     }
     FreeCipherInner(impl);
@@ -319,17 +310,15 @@ static HcfResult EngineCipherInit(HcfCipherGeneratorSpi *self, enum HcfCryptoMod
 static HcfResult EngineUpdate(HcfCipherGeneratorSpi *self, HcfBlob *input, HcfBlob *output)
 {
     if ((self == NULL) || (input == NULL) || (output == NULL)) {
-        LOGE("Invalid input parameter.");
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((const HcfObjectBase *)self, GetAesCipherClass())) {
-        LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
     MbedtlsAesCipherSpiImpl *impl = (MbedtlsAesCipherSpiImpl *)self;
     if (impl->initFlag != CIPHER_INIT) {
-        LOGE("Cipher instance is not initialized!");
-        return HCF_ERR_INVALID_CALL;
+        LOGE("Cipher instance is not initialized before update!");
+        return HCF_ERR_CRYPTO_OPERATION;
     }
     HcfResult ret = AppendData(impl, input);
     if (ret != HCF_SUCCESS) {
@@ -387,7 +376,7 @@ static HcfResult CbcEncryptFinal(MbedtlsAesCipherSpiImpl *impl, HcfBlob *output)
         padLen = AES_BLOCK_SIZE - (impl->dataLen % AES_BLOCK_SIZE);
         totalLen = impl->dataLen + padLen;
     } else if ((impl->dataLen % AES_BLOCK_SIZE) != 0) {
-        LOGE("cbc noPadding encrypt data len is not block aligned!");
+        LOGE("cbc not aligned");
         return HCF_ERR_PARAMETER_CHECK_FAILED;
     }
     uint8_t *inBuf = (uint8_t *)HcfMalloc(totalLen, 0);
@@ -528,7 +517,7 @@ static HcfResult ExtractGcmDecryptTag(MbedtlsAesCipherSpiImpl *impl, uint32_t ta
         return HCF_SUCCESS;
     }
     if (*cipherLen < tagLen) {
-        LOGE("gcm decrypt data is too short to contain authTag!");
+        LOGE("gcm too short");
         return HCF_INVALID_PARAMS;
     }
     *extractedTag = (unsigned char *)HcfMalloc(tagLen, 0);
@@ -594,17 +583,15 @@ static HcfResult GcmDecryptFinal(MbedtlsAesCipherSpiImpl *impl, HcfBlob *output)
 static HcfResult EngineDoFinal(HcfCipherGeneratorSpi *self, HcfBlob *input, HcfBlob *output)
 {
     if ((self == NULL) || (output == NULL)) {
-        LOGE("Invalid input parameter!");
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((const HcfObjectBase *)self, GetAesCipherClass())) {
-        LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
     MbedtlsAesCipherSpiImpl *impl = (MbedtlsAesCipherSpiImpl *)self;
     if (impl->initFlag != CIPHER_INIT) {
-        LOGE("Cipher instance is not initialized!");
-        return HCF_ERR_INVALID_CALL;
+        LOGE("Cipher instance is not initialized before doFinal!");
+        return HCF_ERR_CRYPTO_OPERATION;
     }
     HcfResult ret = AppendData(impl, input);
     if (ret != HCF_SUCCESS) {
@@ -633,7 +620,6 @@ static void EngineAesCipherDestroy(HcfObjectBase *self)
         return;
     }
     if (!HcfIsClassMatch(self, GetAesCipherClass())) {
-        LOGE("Class is not match.");
         return;
     }
     MbedtlsAesCipherSpiImpl *impl = (MbedtlsAesCipherSpiImpl *)self;
@@ -641,34 +627,20 @@ static void EngineAesCipherDestroy(HcfObjectBase *self)
     HcfFree(impl);
 }
 
-static HcfResult GetCipherSpecString(HcfCipherGeneratorSpi *self, CipherSpecItem item, char **returnString)
-{
-    (void)self;
-    (void)item;
-    (void)returnString;
-    return HCF_NOT_SUPPORT;
-}
-
-static HcfResult GetCipherSpecUint8Array(HcfCipherGeneratorSpi *self, CipherSpecItem item, HcfBlob *returnUint8Array)
-{
-    (void)self;
-    (void)item;
-    (void)returnUint8Array;
-    return HCF_NOT_SUPPORT;
-}
-
-static HcfResult SetCipherSpecUint8Array(HcfCipherGeneratorSpi *self, CipherSpecItem item, HcfBlob blob)
-{
-    (void)self;
-    (void)item;
-    (void)blob;
-    return HCF_NOT_SUPPORT;
-}
-
 HcfResult MbedtlsAesCipherSpiCreate(HcfCipherAttr *attr, HcfCipherGeneratorSpi **generator)
 {
     if ((attr == NULL) || (generator == NULL)) {
-        LOGE("Invalid input parameter.");
+        return HCF_INVALID_PARAMS;
+    }
+    if (attr->mode == HCF_ALG_MODE_CBC) {
+        if (attr->paddingMode != HCF_ALG_PADDING_PKCS7) {
+            LOGE("CBC mode only supports PKCS7 padding!");
+            return HCF_INVALID_PARAMS;
+        }
+    } else if (attr->mode == HCF_ALG_MODE_GCM) {
+        attr->paddingMode = HCF_ALG_NOPADDING;
+    } else {
+        LOGE("Only support CBC and GCM mode.");
         return HCF_INVALID_PARAMS;
     }
     MbedtlsAesCipherSpiImpl *returnImpl = (MbedtlsAesCipherSpiImpl *)HcfMalloc(sizeof(MbedtlsAesCipherSpiImpl), 0);
@@ -680,9 +652,6 @@ HcfResult MbedtlsAesCipherSpiCreate(HcfCipherAttr *attr, HcfCipherGeneratorSpi *
     returnImpl->base.init = EngineCipherInit;
     returnImpl->base.update = EngineUpdate;
     returnImpl->base.doFinal = EngineDoFinal;
-    returnImpl->base.getCipherSpecString = GetCipherSpecString;
-    returnImpl->base.getCipherSpecUint8Array = GetCipherSpecUint8Array;
-    returnImpl->base.setCipherSpecUint8Array = SetCipherSpecUint8Array;
     returnImpl->base.base.destroy = EngineAesCipherDestroy;
     returnImpl->base.base.getClass = GetAesCipherClass;
     *generator = (HcfCipherGeneratorSpi *)returnImpl;
