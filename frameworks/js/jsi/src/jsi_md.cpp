@@ -189,56 +189,18 @@ JSIValue CryptoFrameworkLiteModule::DigestSync(const JSIValue thisVal, const JSI
 
 JSIValue CryptoFrameworkLiteModule::Squeeze(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
-    if ((args == nullptr) || (argsNum != ARGS_SIZE_TWO)) {
-        LOGE("Squeeze args is err!");
-        return JSI::CreateUndefined();
-    }
-    HcfMd *mdObj = reinterpret_cast<HcfMd *>((uint32_t)JSI::GetNumberProperty(thisVal, "mdObj"));
-    if (mdObj == nullptr) {
-        LOGE("Squeeze mdObj is null!!");
-        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], HCF_INVALID_PARAMS, JSI::CreateUndefined());
-        return JSI::CreateUndefined();
-    }
-    int32_t length = (int32_t)JSI::ValueToNumber(args[ARRAY_INDEX_ZERO]);
-    HcfBlob outBlob = { .data = nullptr, .len = 0 };
-    HcfResult errCode = mdObj->squeeze(mdObj, length, &outBlob);
-    if (errCode != HCF_SUCCESS) {
-        LOGE("Squeeze errCode not is success!");
-        HcfBlobDataClearAndFree(&outBlob);
-        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], errCode, JSI::CreateUndefined());
-        return JSI::CreateUndefined();
-    }
-    JSIValue outVlaue = ConstructJSIReturnResult(&outBlob);
-    CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], errCode, outVlaue);
-    HcfBlobDataClearAndFree(&outBlob);
-
-    return JSI::CreateUndefined();
+    (void)thisVal;
+    (void)args;
+    (void)argsNum;
+    return ThrowErrorCodeResult(HCF_ERR_INVALID_CALL);
 }
 
 JSIValue CryptoFrameworkLiteModule::SqueezeSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
-    if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("SqueezeSync args is err!");
-        return ThrowErrorCodeResult(HCF_INVALID_PARAMS);
-    }
-    HcfMd *mdObj = reinterpret_cast<HcfMd *>((uint32_t)JSI::GetNumberProperty(thisVal, "mdObj"));
-    if (mdObj == nullptr) {
-        LOGE("SqueezeSync mdObj is null!!");
-        return ThrowErrorCodeResult(HCF_INVALID_PARAMS);
-    }
-    int32_t length = (int32_t)JSI::ValueToNumber(args[ARRAY_INDEX_ZERO]);
-    HcfBlob outBlob = { .data = nullptr, .len = 0 };
-    HcfResult errCode = mdObj->squeeze(mdObj, length, &outBlob);
-    if (errCode != HCF_SUCCESS) {
-        LOGE("SqueezeSync errCode not is success!");
-        HcfBlobDataClearAndFree(&outBlob);
-        return ThrowErrorCodeResult(errCode);
-    }
-
-    JSIValue mdSyncData = ConstructJSIReturnResult(&outBlob);
-    HcfBlobDataClearAndFree(&outBlob);
-
-    return mdSyncData;
+    (void)thisVal;
+    (void)args;
+    (void)argsNum;
+    return ThrowErrorCodeResult(HCF_ERR_INVALID_CALL);
 }
 
 JSIValue CryptoFrameworkLiteModule::GetMdLength(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
