@@ -31,33 +31,38 @@ static HcfResult BuildHmacParamsSpecFromObject(JSIValue specObj, HcfMacParamsSpe
 {
     char *algName = JSI::ValueToString(JSI::GetNamedProperty(specObj, "algName"));
     if (algName == nullptr) {
-        LOGE("get algName from spec failed!");
+        LOGE("BuildHmacParamsSpecFromObject algName is null!");
         return HCF_INVALID_PARAMS;
+    }
+    if (strcmp(algName, "HMAC") != 0) {
+        LOGE("BuildHmacParamsSpecFromObject algName %{public}s is not supported on mini!", algName);
+        JSI::ReleaseString(algName);
+        return HCF_NOT_SUPPORT;
     }
     char *mdName = JSI::ValueToString(JSI::GetNamedProperty(specObj, "mdName"));
     if (mdName == nullptr) {
-        LOGE("get mdName from spec failed!");
+        LOGE("BuildHmacParamsSpecFromObject mdName is null!");
         JSI::ReleaseString(algName);
         return HCF_INVALID_PARAMS;
     }
     size_t mdLen = strlen(mdName);
     HcfHmacParamsSpec *tmp = (HcfHmacParamsSpec *)HcfMalloc(sizeof(HcfHmacParamsSpec), 0);
     if (tmp == nullptr) {
-        LOGE("malloc hmac spec failed!");
+        LOGE("BuildHmacParamsSpecFromObject malloc tmp failed!");
         JSI::ReleaseString(algName);
         JSI::ReleaseString(mdName);
         return HCF_ERR_MALLOC;
     }
     char *mdNameCopy = static_cast<char *>(HcfMalloc(mdLen + 1, 0));
     if (mdNameCopy == nullptr) {
-        LOGE("malloc mdName failed!");
+        LOGE("BuildHmacParamsSpecFromObject malloc mdNameCopy failed!");
         HcfFree(tmp);
         JSI::ReleaseString(algName);
         JSI::ReleaseString(mdName);
         return HCF_ERR_MALLOC;
     }
     if (memcpy_s(mdNameCopy, mdLen + 1, mdName, mdLen + 1) != EOK) {
-        LOGE("copy mdName failed!");
+        LOGE("BuildHmacParamsSpecFromObject memcpy mdName failed!");
         HcfFree(mdNameCopy);
         HcfFree(tmp);
         JSI::ReleaseString(algName);
@@ -88,13 +93,12 @@ static void FreeMacParams(HcfMacParamsSpec *paramsSpec)
 static bool CheckMacArgs(const JSIValue *args, uint8_t argsNum, JSIValue *errResult)
 {
     if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("CreateMac args is err!");
         *errResult = JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "CreateMac args is err!");
         return false;
     }
     if (!JSI::ValueIsObject(args[0])) {
-        LOGE("CreateMac arg is not HmacSpec object!");
-        *errResult = JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS),
+        LOGE("CreateMac string arg is not supported on mini, need HmacSpec object!");
+        *errResult = JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT),
             "CreateMac arg is not HmacSpec object!");
         return false;
     }
@@ -156,7 +160,6 @@ JSIValue CryptoFrameworkLiteModule::CreateMac(const JSIValue thisVal, const JSIV
 JSIValue CryptoFrameworkLiteModule::MacInit(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARGS_SIZE_TWO)) {
-        LOGE("MacInit args is null!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "MacInit args is null!");
     }
     if (args[ARRAY_INDEX_ONE] == nullptr) {
@@ -165,7 +168,6 @@ JSIValue CryptoFrameworkLiteModule::MacInit(const JSIValue thisVal, const JSIVal
     }
     HcfMac *macObj = reinterpret_cast<HcfMac *>((uint32_t)JSI::GetNumberProperty(thisVal, "macObj"));
     if (macObj == nullptr) {
-        LOGE("MacInit macObj is null!!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], HCF_INVALID_PARAMS, JSI::CreateNull());
         return JSI::CreateUndefined();
     }
@@ -176,14 +178,12 @@ JSIValue CryptoFrameworkLiteModule::MacInit(const JSIValue thisVal, const JSIVal
             (uint32_t)JSI::GetNumberProperty(args[ARRAY_INDEX_ZERO], "keyObj"));
     }
     if (symKey == nullptr) {
-        LOGE("MacInit symKey is null!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], HCF_INVALID_PARAMS, JSI::CreateNull());
         return JSI::CreateUndefined();
     }
 
     HcfResult errCode = macObj->init(macObj, symKey);
     if (errCode != HCF_SUCCESS) {
-        LOGE("MacInit errCode not is success!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], errCode, JSI::CreateNull());
         return JSI::CreateUndefined();
     }
@@ -195,12 +195,10 @@ JSIValue CryptoFrameworkLiteModule::MacInit(const JSIValue thisVal, const JSIVal
 JSIValue CryptoFrameworkLiteModule::MacInitSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("MacInitSync args is null!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "MacInitSync args is null!");
     }
     HcfMac *macObj = reinterpret_cast<HcfMac *>((uint32_t)JSI::GetNumberProperty(thisVal, "macObj"));
     if (macObj == nullptr) {
-        LOGE("MacInitSync macObj is null!!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "MacInitSync macObj is null!");
     }
 
@@ -210,13 +208,11 @@ JSIValue CryptoFrameworkLiteModule::MacInitSync(const JSIValue thisVal, const JS
             (uint32_t)JSI::GetNumberProperty(args[ARRAY_INDEX_ZERO], "keyObj"));
     }
     if (symKey == nullptr) {
-        LOGE("MacInitSync symKey is null!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "MacInitSync symKey is null!");
     }
 
     HcfResult errCode = macObj->init(macObj, symKey);
     if (errCode != HCF_SUCCESS) {
-        LOGE("MacInitSync init ret is error!");
     }
 
     return ThrowErrorCodeResult(errCode);
@@ -225,7 +221,6 @@ JSIValue CryptoFrameworkLiteModule::MacInitSync(const JSIValue thisVal, const JS
 JSIValue CryptoFrameworkLiteModule::MacUpdate(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARGS_SIZE_TWO)) {
-        LOGE("MacUpdate args is null!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "MacUpdate args is null!");
     }
     if (args[ARRAY_INDEX_ONE] == nullptr) {
@@ -235,16 +230,14 @@ JSIValue CryptoFrameworkLiteModule::MacUpdate(const JSIValue thisVal, const JSIV
     }
     HcfMac *macObj = reinterpret_cast<HcfMac *>((uint32_t)JSI::GetNumberProperty(thisVal, "macObj"));
     if (macObj == nullptr) {
-        LOGE("MacUpdate macObj is null!!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], HCF_INVALID_PARAMS, JSI::CreateNull());
         return JSI::CreateUndefined();
     }
 
     JSIValue inValue = JSI::GetNamedProperty(args[ARRAY_INDEX_ZERO], "data");
     HcfBlob inBlob = { .data = nullptr, .len = 0 };
-    HcfResult errCode = ParseUint8ArrayToBlob(inValue, &inBlob);
+    HcfResult errCode = ParseUint8ArrayToDatablob(inValue, &inBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("MacUpdate inBlob is null!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], HCF_INVALID_PARAMS, JSI::CreateNull());
         return JSI::CreateUndefined();
     }
@@ -252,7 +245,6 @@ JSIValue CryptoFrameworkLiteModule::MacUpdate(const JSIValue thisVal, const JSIV
     errCode = macObj->update(macObj, &inBlob);
     HcfBlobDataClearAndFree(&inBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("MacUpdate errCode not is success!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], errCode, JSI::CreateNull());
         return JSI::CreateUndefined();
     }
@@ -264,26 +256,22 @@ JSIValue CryptoFrameworkLiteModule::MacUpdate(const JSIValue thisVal, const JSIV
 JSIValue CryptoFrameworkLiteModule::MacUpdateSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("MacUpdateSync args is null!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "MacUpdateSync args is null!");
     }
     HcfMac *macObj = reinterpret_cast<HcfMac *>((uint32_t)JSI::GetNumberProperty(thisVal, "macObj"));
     if (macObj == nullptr) {
-        LOGE("MacUpdateSync macObj is null!!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "MacUpdateSync macObj is null!");
     }
     JSIValue inValue = JSI::GetNamedProperty(args[ARRAY_INDEX_ZERO], "data");
     HcfBlob inBlob = { .data = nullptr, .len = 0 };
-    HcfResult errCode = ParseUint8ArrayToBlob(inValue, &inBlob);
+    HcfResult errCode = ParseUint8ArrayToDatablob(inValue, &inBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("MacUpdateSync inBlob is null!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(errCode), "MacUpdateSync inBlob is null!");
     }
 
     errCode = macObj->update(macObj, &inBlob);
     HcfBlobDataClearAndFree(&inBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("MacUpdateSync update ret is error!");
     }
 
     return ThrowErrorCodeResult(errCode);
@@ -292,7 +280,6 @@ JSIValue CryptoFrameworkLiteModule::MacUpdateSync(const JSIValue thisVal, const 
 JSIValue CryptoFrameworkLiteModule::MacDoFinal(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("MacDoFinal args is err!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "MacDoFinal args is err!");
     }
     if (args[ARRAY_INDEX_ZERO] == nullptr) {
@@ -302,14 +289,12 @@ JSIValue CryptoFrameworkLiteModule::MacDoFinal(const JSIValue thisVal, const JSI
     }
     HcfMac *macObj = reinterpret_cast<HcfMac *>((uint32_t)JSI::GetNumberProperty(thisVal, "macObj"));
     if (macObj == nullptr) {
-        LOGE("MacDoFinal macObj is null!!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ZERO], HCF_INVALID_PARAMS, JSI::CreateUndefined());
         return JSI::CreateUndefined();
     }
     HcfBlob outBlob = { .data = nullptr, .len = 0 };
     HcfResult errCode = macObj->doFinal(macObj, &outBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("MacDoFinal errCode not is success!");
         HcfBlobDataClearAndFree(&outBlob);
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ZERO], errCode, JSI::CreateUndefined());
         return JSI::CreateUndefined();
@@ -327,14 +312,12 @@ JSIValue CryptoFrameworkLiteModule::MacDoFinalSync(const JSIValue thisVal, const
     (void)argsNum;
     HcfMac *macObj = reinterpret_cast<HcfMac *>((uint32_t)JSI::GetNumberProperty(thisVal, "macObj"));
     if (macObj == nullptr) {
-        LOGE("MacDoFinalSync macObj is null!!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "MacDoFinalSync macObj is null!");
     }
 
     HcfBlob outBlob = { .data = nullptr, .len = 0 };
     HcfResult errCode = macObj->doFinal(macObj, &outBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("MacDoFinalSync errCode not is success!");
         HcfBlobDataClearAndFree(&outBlob);
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(errCode), "MacDoFinalSync errCode not is success!");
     }
@@ -350,7 +333,6 @@ JSIValue CryptoFrameworkLiteModule::GetMacLength(const JSIValue thisVal, const J
     (void)thisVal;
     (void)args;
     (void)argsNum;
-    LOGE("GetMacLength is not supported.");
     return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT), "GetMacLength is not supported.");
 }
 

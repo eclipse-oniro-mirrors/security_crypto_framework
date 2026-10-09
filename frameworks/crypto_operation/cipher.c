@@ -196,7 +196,6 @@ static HcfResult OnSetParameter(const HcfParaConfig *config, void *cipher)
         return HCF_INVALID_PARAMS;
     }
     HcfResult ret = HCF_SUCCESS;
-    LOGD("Set Parameter:%{public}s", config->tag);
     switch (config->paraType) {
         case HCF_ALG_TYPE:
             SetKeyType(config->paraValue, cipher);
@@ -254,7 +253,7 @@ static void CipherDestroy(HcfObjectBase *self)
         return;
     }
     if (!HcfIsClassMatch(self, GetCipherGeneratorClass())) {
-        LOGE("Class not match.");
+        LOGE("Class is not match.");
         return;
     }
     CipherGenImpl *impl = (CipherGenImpl *)self;
@@ -276,7 +275,7 @@ static HcfResult SetCipherSpecUint8Array(HcfCipher *self, CipherSpecItem item, H
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetCipherGeneratorClass())) {
-        LOGE("Class not match.");
+        LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
     CipherGenImpl *impl = (CipherGenImpl *)self;
@@ -300,7 +299,7 @@ static HcfResult GetCipherSpecString(HcfCipher *self, CipherSpecItem item, char 
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetCipherGeneratorClass())) {
-        LOGE("Class not match.");
+        LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
     CipherGenImpl *impl = (CipherGenImpl *)self;
@@ -318,7 +317,7 @@ static HcfResult GetCipherSpecUint8Array(HcfCipher *self, CipherSpecItem item, H
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetCipherGeneratorClass())) {
-        LOGE("Class not match.");
+        LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
     CipherGenImpl *impl = (CipherGenImpl *)self;
@@ -365,7 +364,7 @@ static HcfResult CipherUpdate(HcfCipher *self, HcfBlob *input, HcfBlob *output)
 static HcfResult CipherFinal(HcfCipher *self, HcfBlob *input, HcfBlob *output)
 {
     if ((self == NULL) || (output == NULL)) {
-        LOGE("Invalid input parameter!");
+        LOGE("Invalid input parameter.");
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetCipherGeneratorClass())) {

@@ -69,22 +69,12 @@ static HcfResult MbedtlsRandBytes(uint8_t *buf, size_t len)
     return HCF_SUCCESS;
 }
 
-static HcfResult GetEncoded(HcfKey *self, HcfBlob *key)
-{
-    (void)self;
-    (void)key;
-    LOGE("getEncoded is not supported.");
-    return HCF_NOT_SUPPORT;
-}
-
 static void ClearMem(HcfSymKey *self)
 {
     if (self == NULL) {
-        LOGE("symKey is NULL.");
         return;
     }
     if (!HcfIsClassMatch((const HcfObjectBase *)self, GetMbedtlsSymKeyClass())) {
-        LOGE("Class is not match.");
         return;
     }
     SymKeyImpl *impl = (SymKeyImpl *)self;
@@ -98,11 +88,9 @@ static void ClearMem(HcfSymKey *self)
 static const char *GetFormat(HcfKey *self)
 {
     if (self == NULL) {
-        LOGE("Invalid input parameter!");
         return NULL;
     }
     if (!HcfIsClassMatch((const HcfObjectBase *)self, GetMbedtlsSymKeyClass())) {
-        LOGE("Class is not match.");
         return NULL;
     }
     return "PKCS#8";
@@ -111,33 +99,21 @@ static const char *GetFormat(HcfKey *self)
 static const char *GetAlgorithm(HcfKey *self)
 {
     if (self == NULL) {
-        LOGE("Invalid input parameter!");
         return NULL;
     }
     if (!HcfIsClassMatch((const HcfObjectBase *)self, GetMbedtlsSymKeyClass())) {
-        LOGE("Class is not match.");
         return NULL;
     }
     SymKeyImpl *impl = (SymKeyImpl *)self;
     return (const char *)impl->algoName;
 }
 
-static HcfResult GetSymKeySize(HcfKey *self, int *keySize)
-{
-    (void)self;
-    (void)keySize;
-    LOGE("getKeySize is not supported.");
-    return HCF_NOT_SUPPORT;
-}
-
 static void DestroySymKeyGeneratorSpi(HcfObjectBase *base)
 {
     if (base == NULL) {
-        LOGE("Invalid input parameter!");
         return;
     }
     if (!HcfIsClassMatch(base, GetMbedtlsSymKeyGeneratorClass())) {
-        LOGE("Class is not match!");
         return;
     }
     HcfFree(base);
@@ -146,11 +122,9 @@ static void DestroySymKeyGeneratorSpi(HcfObjectBase *base)
 static void DestroySymKeySpi(HcfObjectBase *base)
 {
     if (base == NULL) {
-        LOGE("Invalid input parameter!");
         return;
     }
     if (!HcfIsClassMatch(base, GetMbedtlsSymKeyClass())) {
-        LOGE("Class is not match.");
         return;
     }
     SymKeyImpl *impl = (SymKeyImpl *)base;
@@ -187,7 +161,7 @@ static char *BuildAlgoName(MbedtlsSymKeyGeneratorSpiImpl *impl, int keySize)
 {
     char keySizeChar[MAX_KEY_STR_SIZE] = { 0 };
     if (sprintf_s(keySizeChar, MAX_KEY_STR_SIZE, "%d", keySize) < 0) {
-        LOGE("Invalid input parameter!");
+        LOGE("Invalid input parameter.");
         return NULL;
     }
     char *nameType = GetAlgoNameType(impl->attr.algo);
@@ -242,7 +216,7 @@ static HcfResult RandomSymmKey(int32_t keyLen, HcfBlob *symmKey)
 static HcfResult CopySymmKey(const HcfBlob *srcKey, HcfBlob *dstKey)
 {
     if ((srcKey->data == NULL) || (srcKey->len == 0)) {
-        LOGE("Invalid input parameter!");
+        LOGE("Invalid input parameter.");
         return HCF_INVALID_PARAMS;
     }
     uint8_t *keyMaterial = (uint8_t *)HcfMalloc(srcKey->len, 0);
@@ -263,10 +237,8 @@ static HcfResult CopySymmKey(const HcfBlob *srcKey, HcfBlob *dstKey)
 static void InitSymKeyMethods(SymKeyImpl *returnSymmKey)
 {
     returnSymmKey->key.clearMem = ClearMem;
-    returnSymmKey->key.key.getEncoded = GetEncoded;
     returnSymmKey->key.key.getFormat = GetFormat;
     returnSymmKey->key.key.getAlgorithm = GetAlgorithm;
-    returnSymmKey->key.key.getKeySize = GetSymKeySize;
     returnSymmKey->key.key.base.destroy = DestroySymKeySpi;
     returnSymmKey->key.key.base.getClass = GetMbedtlsSymKeyClass;
 }
@@ -274,11 +246,9 @@ static void InitSymKeyMethods(SymKeyImpl *returnSymmKey)
 static HcfResult GenerateSymmKey(HcfSymKeyGeneratorSpi *self, HcfSymKey **symmKey)
 {
     if ((self == NULL) || (symmKey == NULL)) {
-        LOGE("Invalid input parameter!");
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((const HcfObjectBase *)self, GetMbedtlsSymKeyGeneratorClass())) {
-        LOGE("Class is not match!");
         return HCF_INVALID_PARAMS;
     }
     MbedtlsSymKeyGeneratorSpiImpl *impl = (MbedtlsSymKeyGeneratorSpiImpl *)self;
@@ -324,11 +294,9 @@ static bool IsBlobKeyLenValid(SymKeyAttr attr, const HcfBlob *key)
 static HcfResult ConvertSymmKey(HcfSymKeyGeneratorSpi *self, const HcfBlob *key, HcfSymKey **symmKey)
 {
     if ((self == NULL) || (symmKey == NULL) || !HcfIsBlobValid(key)) {
-        LOGE("Invalid input parameter.");
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((const HcfObjectBase *)self, GetMbedtlsSymKeyGeneratorClass())) {
-        LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
     MbedtlsSymKeyGeneratorSpiImpl *impl = (MbedtlsSymKeyGeneratorSpiImpl *)self;
@@ -368,7 +336,6 @@ static HcfResult ConvertSymmKey(HcfSymKeyGeneratorSpi *self, const HcfBlob *key,
 HcfResult MbedtlsSymKeyGeneratorSpiCreate(SymKeyAttr *attr, HcfSymKeyGeneratorSpi **generator)
 {
     if ((attr == NULL) || (generator == NULL)) {
-        LOGE("Invalid input parameter.");
         return HCF_INVALID_PARAMS;
     }
     MbedtlsSymKeyGeneratorSpiImpl *returnGenerator =

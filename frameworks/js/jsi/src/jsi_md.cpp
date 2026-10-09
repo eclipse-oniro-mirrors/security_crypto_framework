@@ -28,12 +28,10 @@ JSIValue CryptoFrameworkLiteModule::CreateMd(const JSIValue thisVal, const JSIVa
 {
     (void)thisVal;
     if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("CreateMd args is err!");
         return ThrowErrorCodeResult(HCF_INVALID_PARAMS);
     }
     char *alg = JSI::ValueToString(args[0]);
     if (alg == nullptr) {
-        LOGE("Update alg is null!");
         return ThrowErrorCodeResult(HCF_INVALID_PARAMS);
     }
 
@@ -77,12 +75,10 @@ JSIValue CryptoFrameworkLiteModule::CreateMd(const JSIValue thisVal, const JSIVa
 JSIValue CryptoFrameworkLiteModule::Update(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARGS_SIZE_TWO)) {
-        LOGE("Update args is null!");
         return JSI::CreateUndefined();
     }
     HcfMd *mdObj = reinterpret_cast<HcfMd *>((uint32_t)JSI::GetNumberProperty(thisVal, "mdObj"));
     if (mdObj == nullptr) {
-        LOGE("Update mdObj is null!!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], HCF_INVALID_PARAMS, JSI::CreateNull());
         return JSI::CreateUndefined();
     }
@@ -91,7 +87,6 @@ JSIValue CryptoFrameworkLiteModule::Update(const JSIValue thisVal, const JSIValu
     HcfBlob inBlob = { .data = nullptr, .len = 0 };
     HcfResult errCode = ParseUint8ArrayToBlob(inVlaue, &inBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("Update inBlob is null!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], HCF_INVALID_PARAMS, JSI::CreateNull());
         return JSI::CreateUndefined();
     }
@@ -99,7 +94,6 @@ JSIValue CryptoFrameworkLiteModule::Update(const JSIValue thisVal, const JSIValu
     errCode = mdObj->update(mdObj, &inBlob);
     HcfBlobDataClearAndFree(&inBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("Update errCode not is success!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ONE], errCode, JSI::CreateNull());
         return JSI::CreateUndefined();
     }
@@ -111,26 +105,22 @@ JSIValue CryptoFrameworkLiteModule::Update(const JSIValue thisVal, const JSIValu
 JSIValue CryptoFrameworkLiteModule::UpdateSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("UpdateSync args is null!");
         return ThrowErrorCodeResult(HCF_INVALID_PARAMS);
     }
     HcfMd *mdObj = reinterpret_cast<HcfMd *>((uint32_t)JSI::GetNumberProperty(thisVal, "mdObj"));
     if (mdObj == nullptr) {
-        LOGE("UpdateSync mdObj is null!!");
         return ThrowErrorCodeResult(HCF_INVALID_PARAMS);
     }
     JSIValue inVlaue = JSI::GetNamedProperty(args[ARRAY_INDEX_ZERO], "data");
     HcfBlob inBlob = { .data = nullptr, .len = 0 };
     HcfResult errCode = ParseUint8ArrayToBlob(inVlaue, &inBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("UpdateSync inBlob is null!");
         return ThrowErrorCodeResult(errCode);
     }
 
     errCode = mdObj->update(mdObj, &inBlob);
     HcfBlobDataClearAndFree(&inBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("UpdateSync update ret is error!");
     }
 
     return ThrowErrorCodeResult(errCode);
@@ -139,19 +129,16 @@ JSIValue CryptoFrameworkLiteModule::UpdateSync(const JSIValue thisVal, const JSI
 JSIValue CryptoFrameworkLiteModule::Digest(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
     if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
-        LOGE("Digest args is err or mdObj nullptr!");
         return JSI::CreateUndefined();
     }
     HcfMd *mdObj = reinterpret_cast<HcfMd *>((uint32_t)JSI::GetNumberProperty(thisVal, "mdObj"));
     if (mdObj == nullptr) {
-        LOGE("Digest mdObj is null!!");
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ZERO], HCF_INVALID_PARAMS, JSI::CreateUndefined());
         return JSI::CreateUndefined();
     }
     HcfBlob outBlob = { .data = nullptr, .len = 0 };
     HcfResult errCode = mdObj->doFinal(mdObj, &outBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("Digest errCode not is success!");
         HcfBlobDataClearAndFree(&outBlob);
         CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ZERO], errCode, JSI::CreateUndefined());
         return JSI::CreateUndefined();
@@ -169,14 +156,12 @@ JSIValue CryptoFrameworkLiteModule::DigestSync(const JSIValue thisVal, const JSI
     (void)argsNum;
     HcfMd *mdObj = reinterpret_cast<HcfMd *>((uint32_t)JSI::GetNumberProperty(thisVal, "mdObj"));
     if (mdObj == nullptr) {
-        LOGE("DigestSync mdObj is null!!");
         return ThrowErrorCodeResult(HCF_INVALID_PARAMS);
     }
 
     HcfBlob outBlob = { .data = nullptr, .len = 0 };
     HcfResult errCode = mdObj->doFinal(mdObj, &outBlob);
     if (errCode != HCF_SUCCESS) {
-        LOGE("DigestSync errCode not is success!");
         HcfBlobDataClearAndFree(&outBlob);
         return ThrowErrorCodeResult(errCode);
     }
@@ -209,7 +194,6 @@ JSIValue CryptoFrameworkLiteModule::GetMdLength(const JSIValue thisVal, const JS
     (void)argsNum;
     HcfMd *mdObj = reinterpret_cast<HcfMd *>((uint32_t)JSI::GetNumberProperty(thisVal, "mdObj"));
     if (mdObj == nullptr) {
-        LOGE("GetMdLength mdObj is null!");
         return ThrowErrorCodeResult(HCF_INVALID_PARAMS);
     }
 

@@ -36,7 +36,6 @@ static const char *GetMbedtlsRandClass(void)
 static mbedtls_entropy_context *MbedtlsGetMdEntropy(HcfRandSpi *self)
 {
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetMbedtlsRandClass())) {
-        LOGE("Class is not match.");
         return NULL;
     }
 
@@ -46,7 +45,6 @@ static mbedtls_entropy_context *MbedtlsGetMdEntropy(HcfRandSpi *self)
 static mbedtls_ctr_drbg_context *MbedtlsGetMdCtrDrbg(HcfRandSpi *self)
 {
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetMbedtlsRandClass())) {
-        LOGE("Class is not match.");
         return NULL;
     }
     return ((HcfRandSpiImpl *)self)->ctrDrbg;
@@ -55,7 +53,6 @@ static mbedtls_ctr_drbg_context *MbedtlsGetMdCtrDrbg(HcfRandSpi *self)
 static HcfResult MbedtlsGenerateRandom(HcfRandSpi *self, int32_t numBytes, HcfBlob *random)
 {
     if ((self == NULL) || (random == NULL)) {
-        LOGE("Invalid params!");
         return HCF_INVALID_PARAMS;
     }
     if (numBytes <= 0) {
@@ -87,11 +84,9 @@ static HcfResult MbedtlsGenerateRandom(HcfRandSpi *self, int32_t numBytes, HcfBl
 static const char *MbedtlsGetRandAlgoName(HcfRandSpi *self)
 {
     if (self == NULL) {
-        LOGE("Invalid input parameter.");
         return NULL;
     }
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetMbedtlsRandClass())) {
-        LOGE("Class is not match.");
         return NULL;
     }
 
@@ -101,7 +96,6 @@ static const char *MbedtlsGetRandAlgoName(HcfRandSpi *self)
 static void MbedtlsSetSeed(HcfRandSpi *self, HcfBlob *seed)
 {
     if ((self == NULL) || (seed == NULL)) {
-        LOGE("Invalid params!");
         return;
     }
     if ((seed->data == NULL) || (seed->len == 0)) {
@@ -129,11 +123,9 @@ static void MbedtlsSetSeed(HcfRandSpi *self, HcfBlob *seed)
 static void DestroyMbedtlsRand(HcfObjectBase *self)
 {
     if (self == NULL) {
-        LOGE("Self ptr is NULL!");
         return;
     }
     if (!HcfIsClassMatch(self, GetMbedtlsRandClass())) {
-        LOGE("Class is not match.");
         return;
     }
     mbedtls_ctr_drbg_context *ctrDrbg = MbedtlsGetMdCtrDrbg((HcfRandSpi *)self);
@@ -189,7 +181,6 @@ static int32_t MbedtlsRandInitEx(mbedtls_entropy_context **entropy, mbedtls_ctr_
 HcfResult MbedtlsRandSpiCreate(HcfRandSpi **spiObj)
 {
     if (spiObj == NULL) {
-        LOGE("Invalid input parameter.");
         return HCF_INVALID_PARAMS;
     }
     HcfRandSpiImpl *returnSpiImpl = (HcfRandSpiImpl *)HcfMalloc(sizeof(HcfRandSpiImpl), 0);

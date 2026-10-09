@@ -40,7 +40,6 @@ static const char *MbedtlsGetHmacClass(void)
 static mbedtls_md_context_t *MbedtlsGetHmacCtx(HcfMacSpi *self)
 {
     if (!HcfIsClassMatch((HcfObjectBase *)self, MbedtlsGetHmacClass())) {
-        LOGE("Class is not match.");
         return NULL;
     }
     return ((MbedtlsHmacSpiImpl *)self)->ctx;
@@ -49,11 +48,9 @@ static mbedtls_md_context_t *MbedtlsGetHmacCtx(HcfMacSpi *self)
 static HcfResult MbedtlsEngineInitHmac(HcfMacSpi *self, const HcfSymKey *key)
 {
     if (self == NULL) {
-        LOGE("self is NULL!");
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((HcfObjectBase *)self, MbedtlsGetHmacClass())) {
-        LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
     if (MbedtlsGetHmacCtx(self) == NULL) {
@@ -82,7 +79,6 @@ static HcfResult MbedtlsEngineInitHmac(HcfMacSpi *self, const HcfSymKey *key)
 static HcfResult MbedtlsEngineUpdateHmac(HcfMacSpi *self, HcfBlob *input)
 {
     if ((self == NULL) || (input == NULL)) {
-        LOGE("The input self ptr or input is NULL!");
         return HCF_INVALID_PARAMS;
     }
     MbedtlsHmacSpiImpl *hmacImpl = (MbedtlsHmacSpiImpl *)self;
@@ -110,7 +106,6 @@ static HcfResult MbedtlsEngineUpdateHmac(HcfMacSpi *self, HcfBlob *input)
 static HcfResult MbedtlsEngineDoFinalHmac(HcfMacSpi *self, HcfBlob *output)
 {
     if ((self == NULL) || (output == NULL)) {
-        LOGE("The input self ptr or output is NULL!");
         return HCF_INVALID_PARAMS;
     }
     MbedtlsHmacSpiImpl *hmacImpl = (MbedtlsHmacSpiImpl *)self;
@@ -167,11 +162,9 @@ static uint32_t MbedtlsEngineGetHmacLength(HcfMacSpi *self)
 static void MbedtlsDestroyHmac(HcfObjectBase *self)
 {
     if (self == NULL) {
-        LOGE("Self ptr is NULL");
         return;
     }
     if (!HcfIsClassMatch(self, MbedtlsGetHmacClass())) {
-        LOGE("Class is not match.");
         return;
     }
     MbedtlsHmacSpiImpl *impl = (MbedtlsHmacSpiImpl *)self;
@@ -188,7 +181,7 @@ static HcfResult MbedtlsHmacSetupCtx(MbedtlsHmacSpiImpl *impl)
     mbedtls_md_init(impl->ctx);
     mbedtls_md_type_t mdType = MBEDTLS_MD_SHA256;
     if (strcmp(impl->mbedtlsMdName, "SHA256") != 0) {
-        LOGE("Unsupported digest algorithm: %{public}s, only support SHA256!", impl->mbedtlsMdName);
+        LOGE("unsupported digest: %{public}s", impl->mbedtlsMdName);
         return HCF_INVALID_PARAMS;
     }
     int32_t ret = mbedtls_md_setup(impl->ctx, mbedtls_md_info_from_type(mdType), 1);
@@ -202,7 +195,6 @@ static HcfResult MbedtlsHmacSetupCtx(MbedtlsHmacSpiImpl *impl)
 HcfResult MbedtlsHmacSpiCreate(HcfMacParamsSpec *paramsSpec, HcfMacSpi **spiObj)
 {
     if ((paramsSpec == NULL) || (spiObj == NULL)) {
-        LOGE("Invalid input parameter.");
         return HCF_INVALID_PARAMS;
     }
     MbedtlsHmacSpiImpl *returnSpiImpl = (MbedtlsHmacSpiImpl *)HcfMalloc(sizeof(MbedtlsHmacSpiImpl), 0);

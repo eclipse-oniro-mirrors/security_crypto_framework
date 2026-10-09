@@ -199,9 +199,6 @@ static HcfResult OnSetSymKeyParameter(const HcfParaConfig* config, void *attr)
         return HCF_INVALID_PARAMS;
     }
     HcfResult ret = HCF_SUCCESS;
-    LOGD("Set Parameter:%{public}s", config->tag);
-    LOGD("Set Parameter:%{public}d", config->paraType);
-    LOGD("Set Parameter:%{public}d", config->paraValue);
     switch (config->paraType) {
         case HCF_ALG_KEY_TYPE:
             SetKeyLength(config->paraValue, attr);
@@ -232,7 +229,7 @@ static const char *GetAlgoName(HcfSymKeyGenerator *self)
         return NULL;
     }
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetSymKeyGeneratorClass())) {
-        LOGE("Class is not match!");
+        LOGE("Class is not match.");
         return NULL;
     }
     return ((HcfSymmKeyGeneratorImpl *)self)->algoName;
@@ -267,7 +264,7 @@ static HcfResult GenerateSymmKey(HcfSymKeyGenerator *self, HcfSymKey **symmKey)
     HcfSymmKeyGeneratorImpl *impl = (HcfSymmKeyGeneratorImpl *)self;
     if (strcmp(impl->algoName, "RC2") == 0 || strcmp(impl->algoName, "RC4") == 0 ||
         strcmp(impl->algoName, "CAST") == 0 || strcmp(impl->algoName, "Blowfish") == 0) {
-        LOGE("Algorithm does not support generateSymKey, use convertSymKey only.");
+        LOGE("use convertSymKey");
         return HCF_ERR_INVALID_CALL;
     }
     if (impl->spiObj == NULL || impl->spiObj->engineGenerateSymmKey == NULL) {
