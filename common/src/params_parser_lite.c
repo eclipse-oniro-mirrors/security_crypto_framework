@@ -20,6 +20,7 @@
 
 static const HcfParaConfig PARAM_CONFIG[] = {
     {"AES128",       HCF_ALG_KEY_TYPE,       HCF_ALG_AES_128},
+    {"ECC256",       HCF_ALG_KEY_TYPE,       HCF_ALG_ECC_256},
 
     {"CBC",          HCF_ALG_MODE,           HCF_ALG_MODE_CBC},
     {"GCM",          HCF_ALG_MODE,           HCF_ALG_MODE_GCM},

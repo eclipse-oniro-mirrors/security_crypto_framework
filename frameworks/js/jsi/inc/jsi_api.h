@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Huawei Device Co., Ltd.
+ * Copyright (C) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +20,7 @@
 #include "jsi/jsi_types.h"
 #include "sym_key.h"
 #include "cipher.h"
+#include "key_pair.h"
 
 namespace OHOS {
 namespace ACELite {
@@ -33,6 +34,8 @@ public:
     static JSIValue CreateRandom(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
     static JSIValue CreateSymKeyGenerator(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
     static JSIValue CreateCipher(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue CreateAsyKeyGenerator(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue CreateKeyAgreement(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
     static void OnDestroy(void);
 
 private:
@@ -81,12 +84,46 @@ private:
     static JSIValue CipherDoFinalSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
     static JSIValue SetCipherSpec(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
     static JSIValue GetCipherSpec(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    // AsyKey
+    static JSIValue ConstructKeyPairJsObject(HcfKeyPair *keyPair);
+    static JSIValue ConstructPubKeyJsObject(HcfPubKey *pubKey);
+    static JSIValue ConstructPriKeyJsObject(HcfPriKey *priKey);
+    static JSIValue GenerateKeyPair(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue GenerateKeyPairSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue ConvertKey(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue ConvertKeySync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue ConvertPemKey(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue ConvertPemKeySync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PubKeyGetEncodedDer(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PubKeyGetEncoded(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PubKeyGetEncodedPem(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PubKeyGetAsyKeySpec(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PubKeyGetKeySize(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PubKeyGetKeyData(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PubKeyGetKeyDataSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PriKeyGetEncoded(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PriKeyGetEncodedDer(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PriKeyGetEncodedPem(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PriKeyGetAsyKeySpec(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PriKeyGetKeySize(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PriKeyGetPubKey(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PriKeyGetPubKeySync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PriKeyGetKeyData(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PriKeyGetKeyDataSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue PriKeyClearMem(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+
+    // KeyAgreement
+    static JSIValue GenerateSecret(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
+    static JSIValue GenerateSecretSync(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum);
 
     static void MdDestroy(void);
     static void MacDestroy(void);
     static void RandomDestroy(void);
     static void SymKeyDestroy(void);
     static void CipherDestroy(void);
+    static void AsyKeyGeneratorDestroy(void);
+    static void AsyKeyPairDestroy(void);
+    static void KeyAgreementDestroy(void);
 };
 
 void InitCryptoFrameworkModule(JSIValue exports);

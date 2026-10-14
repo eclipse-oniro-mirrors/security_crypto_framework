@@ -19,9 +19,13 @@
 
 #include "key_agreement_spi.h"
 #include "config.h"
+#ifdef CRYPTO_MBEDTLS
+#include "mbedtls_ecdh.h"
+#else
 #include "dh_openssl.h"
 #include "ecdh_openssl.h"
 #include "x25519_openssl.h"
+#endif
 #include "log.h"
 #include "memory.h"
 #include "params_parser.h"
@@ -44,9 +48,13 @@ typedef struct {
 } HcfKeyAgreementGenAbility;
 
 static const HcfKeyAgreementGenAbility KEY_AGREEMENT_GEN_ABILITY_SET[] = {
+#ifdef CRYPTO_MBEDTLS
+    { HCF_ALG_ECC, HcfKeyAgreementSpiMbedtlsEcdhCreate },
+#else
     { HCF_ALG_ECC, HcfKeyAgreementSpiEcdhCreate },
     { HCF_ALG_X25519, HcfKeyAgreementSpiX25519Create },
     { HCF_ALG_DH, HcfKeyAgreementSpiDhCreate }
+#endif
 };
 
 static HcfKeyAgreementSpiCreateFunc FindAbility(HcfKeyAgreementParams *params)
