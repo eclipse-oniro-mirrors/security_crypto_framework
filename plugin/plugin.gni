@@ -126,6 +126,8 @@ mbedtls_plugin_inc_path = [
   "${base_path}/interfaces/inner_api/crypto_operation",
   "${base_path}/interfaces/inner_api/key",
   "${plugin_path}/mbedtls_plugin/hmac/inc",
+  "${plugin_path}/mbedtls_plugin/key/asy_key_generator/inc",
+  "${plugin_path}/mbedtls_plugin/crypto_operation/key_agreement/inc",
   "//base/security/crypto_framework/frameworks/spi",
   "//base/security/crypto_framework/common/inc",
 ]
@@ -136,4 +138,6 @@ mbedtls_plugin_files = [
   "${plugin_path}/mbedtls_plugin/key/sym_key_generator/src/mbedtls_sym_key.c",
   "${plugin_path}/mbedtls_plugin/crypto_operation/cipher/src/mbedtls_cipher.c",
   "${plugin_path}/mbedtls_plugin/hmac/src/mac_mbedtls.c",
+  "${plugin_path}/mbedtls_plugin/key/asy_key_generator/src/mbedtls_ecc_asy_key.c",
+  "${plugin_path}/mbedtls_plugin/crypto_operation/key_agreement/src/mbedtls_ecdh.c",
 ]

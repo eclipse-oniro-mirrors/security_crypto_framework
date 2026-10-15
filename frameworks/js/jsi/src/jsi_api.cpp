@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Huawei Device Co., Ltd.
+ * Copyright (C) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +16,7 @@
 #include "jsi_api.h"
 #include "jsi_list.h"
 #include "jsi.h"
+#include "jsi_api_common.h"
 #include "cipher.h"
 
 namespace OHOS {
@@ -29,6 +30,17 @@ static JSIValue CreateCryptoMode(void)
     return cryptoMode;
 }
 
+static JSIValue CreateAsyKeyDataItem(void)
+{
+    JSIValue asyKeyDataItem = JSI::CreateObject();
+    JSI::SetNumberProperty(asyKeyDataItem, "EC_PRIVATE_K", (double)EC_PRIVATE_K);
+    JSI::SetNumberProperty(asyKeyDataItem, "EC_PRIVATE_04_X_Y_K", (double)EC_PRIVATE_04_X_Y_K);
+    JSI::SetNumberProperty(asyKeyDataItem, "EC_PUBLIC_X_Y", (double)EC_PUBLIC_X_Y);
+    JSI::SetNumberProperty(asyKeyDataItem, "EC_PUBLIC_04_X_Y", (double)EC_PUBLIC_04_X_Y);
+    JSI::SetNumberProperty(asyKeyDataItem, "EC_PUBLIC_COMPRESS_X", (double)EC_PUBLIC_COMPRESS_X);
+    return asyKeyDataItem;
+}
+
 void InitCryptoFrameworkModule(JSIValue exports)
 {
     JSI::SetModuleAPI(exports, "createMd", CryptoFrameworkLiteModule::CreateMd);
@@ -39,18 +51,29 @@ void InitCryptoFrameworkModule(JSIValue exports)
     JSIValue cryptoMode = CreateCryptoMode();
     JSI::SetNamedProperty(exports, "CryptoMode", cryptoMode);
     JSI::ReleaseValue(cryptoMode);
+    JSIValue asyKeyDataItem = CreateAsyKeyDataItem();
+    JSI::SetNamedProperty(exports, "AsyKeyDataItem", asyKeyDataItem);
+    JSI::ReleaseValue(asyKeyDataItem);
+    JSI::SetModuleAPI(exports, "createAsyKeyGenerator", CryptoFrameworkLiteModule::CreateAsyKeyGenerator);
+    JSI::SetModuleAPI(exports, "createKeyAgreement", CryptoFrameworkLiteModule::CreateKeyAgreement);
     JSI::SetOnDestroy(exports, CryptoFrameworkLiteModule::OnDestroy);
     ListObjInit(JSI_ALG_MD);
     ListObjInit(JSI_ALG_MAC);
     ListObjInit(JSI_ALG_RAND);
     ListObjInit(JSI_ALG_SYM_KEY);
     ListObjInit(JSI_ALG_CIPHER);
+    ListObjInit(JSI_ALG_ASY_KEY_GENERATOR);
+    ListObjInit(JSI_ALG_ASY_KEY_PAIR);
+    ListObjInit(JSI_ALG_KEY_AGREEMENT);
 }
 
 void CryptoFrameworkLiteModule::OnDestroy(void)
 {
     CipherDestroy();
     SymKeyDestroy();
+    KeyAgreementDestroy();
+    AsyKeyPairDestroy();
+    AsyKeyGeneratorDestroy();
     RandomDestroy();
     MacDestroy();
     MdDestroy();

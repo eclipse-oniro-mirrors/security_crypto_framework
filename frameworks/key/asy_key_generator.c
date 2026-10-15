@@ -24,16 +24,20 @@
 #include "detailed_dsa_key_params.h"
 #include "detailed_rsa_key_params.h"
 #include "detailed_ecc_key_params.h"
+#ifdef CRYPTO_MBEDTLS
+#include "mbedtls_ecc_asy_key.h"
+#else
 #include "dh_asy_key_generator_openssl.h"
 #include "dsa_asy_key_generator_openssl.h"
 #include "alg_25519_asy_key_generator_openssl.h"
 #include "ml_kem_asy_key_generator_openssl.h"
 #include "ml_dsa_asy_key_generator_openssl.h"
 #include "ecc_asy_key_generator_openssl.h"
-#include "key_utils.h"
-#include "params_parser.h"
 #include "rsa_asy_key_generator_openssl.h"
 #include "sm2_asy_key_generator_openssl.h"
+#endif
+#include "key_utils.h"
+#include "params_parser.h"
 #include "log.h"
 #include "memory.h"
 #include "utils.h"
@@ -75,6 +79,9 @@ typedef struct {
 } HcfAsyKeyGenAbility;
 
 static const HcfAsyKeyGenAbility ASY_KEY_GEN_ABILITY_SET[] = {
+#ifdef CRYPTO_MBEDTLS
+    { HCF_ALG_ECC, HcfAsyKeyGeneratorSpiMbedtlsEccCreate },
+#else
     { HCF_ALG_RSA, HcfAsyKeyGeneratorSpiRsaCreate },
     { HCF_ALG_ECC, HcfAsyKeyGeneratorSpiEccCreate },
     { HCF_ALG_DSA, HcfAsyKeyGeneratorSpiDsaCreate },
@@ -84,6 +91,7 @@ static const HcfAsyKeyGenAbility ASY_KEY_GEN_ABILITY_SET[] = {
     { HCF_ALG_DH, HcfAsyKeyGeneratorSpiDhCreate },
     { HCF_ALG_ML_KEM, HcfAsyKeyGeneratorSpiMlKemCreate },
     { HCF_ALG_ML_DSA, HcfAsyKeyGeneratorSpiMlDsaCreate }
+#endif
 };
 
 typedef struct {

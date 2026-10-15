@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Huawei Device Co., Ltd.
+ * Copyright (C) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -42,6 +42,9 @@ static ListNode g_randObjListHeader = { .prev = nullptr, .next = nullptr };
 static ListNode  g_symKeyObjListHeader = { .prev = nullptr, .next = nullptr };
 static ListNode  g_cipherObjListHeader = { .prev = nullptr, .next = nullptr };
 static ListNode  g_macObjListHeader = { .prev = nullptr, .next = nullptr };
+static ListNode g_asyKeyGeneratorObjListHeader = { .prev = nullptr, .next = nullptr };
+static ListNode g_asyKeyPairObjListHeader = { .prev = nullptr, .next = nullptr };
+static ListNode g_keyAgreementObjListHeader = { .prev = nullptr, .next = nullptr };
 
 static inline void ListInit(ListNode *node)
 {
@@ -71,6 +74,9 @@ ListInfo g_listMap[] = {
     { JSI_ALG_SYM_KEY, &g_symKeyObjListHeader },
     { JSI_ALG_CIPHER, &g_cipherObjListHeader },
     { JSI_ALG_MAC, &g_macObjListHeader },
+    { JSI_ALG_ASY_KEY_GENERATOR, &g_asyKeyGeneratorObjListHeader },
+    { JSI_ALG_ASY_KEY_PAIR, &g_asyKeyPairObjListHeader },
+    { JSI_ALG_KEY_AGREEMENT, &g_keyAgreementObjListHeader }
 };
 
 ListNode *GetListHeader(LiteAlgType type)
