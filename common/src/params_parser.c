@@ -34,7 +34,9 @@ static const HcfParaConfig PARAM_CONFIG[] = {
     {"AES128-WRAP",  HCF_ALG_KEY_TYPE,       HCF_ALG_AES_128_WRAP},
     {"AES192-WRAP",  HCF_ALG_KEY_TYPE,       HCF_ALG_AES_192_WRAP},
     {"AES256-WRAP",  HCF_ALG_KEY_TYPE,       HCF_ALG_AES_256_WRAP},
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
     {"SM4_128",      HCF_ALG_KEY_TYPE,       HCF_ALG_SM4_128},
+#endif
     {"3DES192",      HCF_ALG_KEY_TYPE,       HCF_ALG_3DES_192},
     {"DES64",        HCF_ALG_KEY_TYPE,       HCF_ALG_DES_64},
     {"ChaCha20", HCF_ALG_KEY_TYPE,           HCF_ALG_CHACHA20_256},
@@ -85,7 +87,9 @@ static const HcfParaConfig PARAM_CONFIG[] = {
 
     {"NoHash",       HCF_ALG_DIGEST,         HCF_OPENSSL_DIGEST_NONE},
     {"MD5",          HCF_ALG_DIGEST,         HCF_OPENSSL_DIGEST_MD5},
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
     {"SM3",          HCF_ALG_DIGEST,         HCF_OPENSSL_DIGEST_SM3},
+#endif
     {"SHA1",         HCF_ALG_DIGEST,         HCF_OPENSSL_DIGEST_SHA1},
     {"SHA224",       HCF_ALG_DIGEST,         HCF_OPENSSL_DIGEST_SHA224},
     {"SHA256",       HCF_ALG_DIGEST,         HCF_OPENSSL_DIGEST_SHA256},
@@ -111,14 +115,20 @@ static const HcfParaConfig PARAM_CONFIG[] = {
     {"DSA2048",       HCF_ALG_KEY_TYPE,       HCF_ALG_DSA_2048},
     {"DSA3072",       HCF_ALG_KEY_TYPE,       HCF_ALG_DSA_3072},
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     {"SM2_256",       HCF_ALG_KEY_TYPE,       HCF_ALG_SM2_256},
+#endif
 
     {"RSA",       HCF_ALG_TYPE,       HCF_ALG_RSA_DEFAULT},
     {"DSA",       HCF_ALG_TYPE,       HCF_ALG_DSA_DEFAULT},
     {"ECC",       HCF_ALG_TYPE,       HCF_ALG_ECC_DEFAULT},
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     {"SM2",       HCF_ALG_TYPE,       HCF_ALG_SM2_DEFAULT},
+#endif
     {"AES",       HCF_ALG_TYPE,       HCF_ALG_AES_DEFAULT},
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
     {"SM4",       HCF_ALG_TYPE,       HCF_ALG_SM4_DEFAULT},
+#endif
     {"DES",      HCF_ALG_TYPE,       HCF_ALG_DES_DEFAULT},
     {"3DES",      HCF_ALG_TYPE,       HCF_ALG_3DES_DEFAULT},
     {"HMAC",      HCF_ALG_TYPE,       HCF_ALG_HMAC_DEFAULT},
@@ -141,8 +151,10 @@ static const HcfParaConfig PARAM_CONFIG[] = {
     {"ML-KEM",    HCF_ALG_TYPE,       HCF_ALG_ML_KEM_DEFAULT},
     {"ML-DSA",    HCF_ALG_TYPE,       HCF_ALG_ML_DSA_DEFAULT},
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
     {"C1C3C2",    HCF_ALG_TEXT_FORMAT, HCF_ALG_TEXT_FORMAT_C1C3C2},
     {"C1C2C3",    HCF_ALG_TEXT_FORMAT, HCF_ALG_TEXT_FORMAT_C1C2C3},
+#endif
 
     {"ECC_BrainPoolP160r1",       HCF_ALG_KEY_TYPE,       HCF_ALG_ECC_BP160R1},
     {"ECC_BrainPoolP160t1",       HCF_ALG_KEY_TYPE,       HCF_ALG_ECC_BP160T1},
@@ -180,7 +192,9 @@ static const HcfAlgMap ALG_MAP[] = {
     {"DSA", HCF_ALG_DSA},
     {"RSA", HCF_ALG_RSA},
     {"ECC", HCF_ALG_ECC},
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     {"SM2", HCF_ALG_SM2},
+#endif
     {"Ed25519", HCF_ALG_ED25519},
     {"X25519", HCF_ALG_X25519},
     {"DH", HCF_ALG_DH},
@@ -194,7 +208,9 @@ static const HcfCurveMap CURVE_MAP[] = {
     {"NID_X9_62_prime256v1", HCF_ALG_ECC_256},
     {"NID_secp384r1", HCF_ALG_ECC_384},
     {"NID_secp521r1", HCF_ALG_ECC_521},
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     {"NID_sm2", HCF_ALG_SM2_256},
+#endif
     {"NID_brainpoolP160r1", HCF_ALG_ECC_BP160R1},
     {"NID_brainpoolP160t1", HCF_ALG_ECC_BP160T1},
     {"NID_brainpoolP192r1", HCF_ALG_ECC_BP192R1},

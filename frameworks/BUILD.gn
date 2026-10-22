@@ -67,6 +67,7 @@ if (os_level == "standard") {
       external_deps += [ "api_metrics:histogrammanager" ]
       defines += [ "OPENSSL_API_METRICS_ENABLE" ]
     }
+    defines += crypto_sm_defines
   }
 } else if (os_level == "mini") {
   ohos_static_library("crypto_framework_lib") {

@@ -27,7 +27,13 @@
         "SystemCapability.Security.CryptoFramework.Kdf",
         "SystemCapability.Security.CryptoFramework.Rand"
       ],
-      "features": [ "crypto_framework_enabled" ],
+      "features": [
+        "crypto_framework_enabled",
+        "crypto_framework_disable_sm2_sign",
+        "crypto_framework_disable_sm2_enc",
+        "crypto_framework_disable_sm3",
+        "crypto_framework_disable_sm4"
+      ],
       "adapted_system_type": [
           "standard",
           "mini"

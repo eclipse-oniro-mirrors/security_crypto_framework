@@ -20,8 +20,12 @@
 #include "aes_openssl.h"
 #include "des_openssl.h"
 #include "cipher_rsa_openssl.h"
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
 #include "cipher_sm2_openssl.h"
+#endif
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
 #include "sm4_openssl.h"
+#endif
 #include "chacha20_openssl.h"
 #include "cipher_openssl.h"
 #include "plugin_operation_err.h"
@@ -56,11 +60,15 @@ static const HcfCipherGenAbility CIPHER_ABILITY_SET[] = {
     { HCF_ALG_AES, { MbedtlsAesCipherSpiCreate } },
 #else
     { HCF_ALG_RSA, { HcfCipherRsaCipherSpiCreate } },
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
     { HCF_ALG_SM2, { HcfCipherSm2CipherSpiCreate } },
+#endif
     { HCF_ALG_AES, { HcfCipherAesGeneratorSpiCreate } },
     { HCF_ALG_3DES, { HcfCipherDesGeneratorSpiCreate } },
     { HCF_ALG_DES, { HcfCipherDesGeneratorSpiCreate } },
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
     { HCF_ALG_SM4, { HcfCipherSm4GeneratorSpiCreate } },
+#endif
     { HCF_ALG_AES_WRAP, { HcfCipherAesGeneratorSpiCreate } },
     { HCF_ALG_CHACHA20, { HcfCipherChaCha20GeneratorSpiCreate } },
     { HCF_ALG_CHACHA20_POLY1305, { HcfCipherChaCha20GeneratorSpiCreate } },
@@ -81,9 +89,11 @@ static void SetKeyType(HcfAlgParaValue value, void *cipher)
         case HCF_ALG_AES_DEFAULT:
             cipherAttr->algo = HCF_ALG_AES;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
         case HCF_ALG_SM4_DEFAULT:
             cipherAttr->algo = HCF_ALG_SM4;
             break;
+#endif
         case HCF_ALG_DES_DEFAULT:
             cipherAttr->algo = HCF_ALG_DES;
             break;
@@ -93,9 +103,11 @@ static void SetKeyType(HcfAlgParaValue value, void *cipher)
         case HCF_ALG_RSA_DEFAULT:
             cipherAttr->algo = HCF_ALG_RSA;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
         case HCF_ALG_SM2_DEFAULT:
             cipherAttr->algo = HCF_ALG_SM2;
             break;
+#endif
         case HCF_ALG_AES_WRAP_DEFAULT:
             cipherAttr->algo = HCF_ALG_AES_WRAP;
             break;
@@ -137,9 +149,11 @@ static void SetKeyLength(HcfAlgParaValue value, void *cipher)
         case HCF_ALG_AES_256_WRAP:
             cipherAttr->algo = HCF_ALG_AES_WRAP;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
         case HCF_ALG_SM4_128:
             cipherAttr->algo = HCF_ALG_SM4;
             break;
+#endif
         case HCF_ALG_3DES_192:
             cipherAttr->algo = HCF_ALG_3DES;
             break;
@@ -155,9 +169,11 @@ static void SetKeyLength(HcfAlgParaValue value, void *cipher)
         case HCF_OPENSSL_RSA_8192:
             cipherAttr->algo = HCF_ALG_RSA;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
         case HCF_ALG_SM2_256:
             cipherAttr->algo = HCF_ALG_SM2;
             break;
+#endif
         case HCF_ALG_CHACHA20_256:
             cipherAttr->algo = HCF_ALG_CHACHA20;
             break;
@@ -285,7 +301,11 @@ static HcfResult SetCipherSpecUint8Array(HcfCipher *self, CipherSpecItem item, H
 static bool CheckCipherSpecString(CipherSpecItem item)
 {
     return ((item == OAEP_MD_NAME_STR) || (item == OAEP_MGF_NAME_STR) ||
-        (item == OAEP_MGF1_MD_STR) || (item == SM2_MD_NAME_STR));
+        (item == OAEP_MGF1_MD_STR)
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
+        || (item == SM2_MD_NAME_STR)
+#endif
+        );
 }
 
 static HcfResult GetCipherSpecString(HcfCipher *self, CipherSpecItem item, char **returnString)

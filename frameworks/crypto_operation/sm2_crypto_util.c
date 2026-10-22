@@ -16,7 +16,9 @@
 #include "sm2_crypto_util.h"
 #include <limits.h>
 #include <securec.h>
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
 #include "cipher_sm2_crypto_util_openssl.h"
+#endif
 #include "log.h"
 #include "memory.h"
 #include "utils.h"
@@ -30,6 +32,7 @@ typedef struct {
     HcfSm2SpecToASN1CreateFunc createFunc;
 } HcfSm2UtilAbility;
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
 static const HcfSm2UtilAbility CONVERT_ABILITY_SET[] = {
     { "C1C3C2", HcfSm2SpecToAsn1 },
 };
@@ -143,3 +146,22 @@ HcfResult HcfGetCipherTextSpec(HcfBlob *input, const char *mode, Sm2CipherTextSp
     }
     return HCF_SUCCESS;
 }
+#else
+HcfResult HcfGenCipherTextBySpec(Sm2CipherTextSpec *spec, const char *mode, HcfBlob *output)
+{
+    (void)spec;
+    (void)mode;
+    (void)output;
+    LOGE("SM2 cipher is not supported!");
+    return HCF_NOT_SUPPORT;
+}
+
+HcfResult HcfGetCipherTextSpec(HcfBlob *input, const char *mode, Sm2CipherTextSpec **returnSpc)
+{
+    (void)input;
+    (void)mode;
+    (void)returnSpc;
+    LOGE("SM2 cipher is not supported!");
+    return HCF_NOT_SUPPORT;
+}
+#endif

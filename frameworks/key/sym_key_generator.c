@@ -69,7 +69,9 @@ static const SymKeyGenAbility SYMKEY_ABILITY_SET[] = {
     { HCF_ALG_HMAC, { MbedtlsSymKeyGeneratorSpiCreate }},
 #else
     { HCF_ALG_AES, { HcfSymKeyGeneratorSpiCreate }},
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
     { HCF_ALG_SM4, { HcfSymKeyGeneratorSpiCreate }},
+#endif
     { HCF_ALG_DES, { HcfSymKeyGeneratorSpiCreate }},
     { HCF_ALG_3DES, { HcfSymKeyGeneratorSpiCreate }},
     { HCF_ALG_HMAC, { HcfSymKeyGeneratorSpiCreate }},
@@ -114,10 +116,12 @@ static void SetKeyLength(HcfAlgParaValue value, void *attr)
             keyAttr->algo = HCF_ALG_AES;
             keyAttr->keySize = AES_KEY_SIZE_256;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
         case HCF_ALG_SM4_128:
             keyAttr->algo = HCF_ALG_SM4;
             keyAttr->keySize = SM4_KEY_SIZE_128;
             break;
+#endif
         case HCF_ALG_3DES_192:
             keyAttr->algo = HCF_ALG_3DES;
             keyAttr->keySize = TRIPLE_DES_KEY_SIZE_192;
@@ -179,9 +183,11 @@ static void SetKeyLenByDigest(HcfAlgParaValue value, void *attr)
         case HCF_OPENSSL_DIGEST_SHA3_512:
             keyAttr->keySize = HMAC_KEY_SIZE_SHA512;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
         case HCF_OPENSSL_DIGEST_SM3:
             keyAttr->keySize = HMAC_KEY_SIZE_SM3;
             break;
+#endif
         case HCF_OPENSSL_DIGEST_MD5:
             keyAttr->keySize = HMAC_KEY_SIZE_MD5;
             break;

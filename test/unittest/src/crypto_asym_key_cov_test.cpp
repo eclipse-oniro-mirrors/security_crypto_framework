@@ -127,6 +127,7 @@ HWTEST_F(CryptoAsymKeyCovTest, EccMallocFailTest001, TestSize.Level0)
     OH_CryptoAsymKeyGenerator_Destroy(generator);
 }
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
 HWTEST_F(CryptoAsymKeyCovTest, Sm2MallocFailTest001, TestSize.Level0)
 {
     OH_CryptoAsymKeyGenerator *generator = nullptr;
@@ -142,6 +143,7 @@ HWTEST_F(CryptoAsymKeyCovTest, Sm2MallocFailTest001, TestSize.Level0)
 
     OH_CryptoAsymKeyGenerator_Destroy(generator);
 }
+#endif
 
 HWTEST_F(CryptoAsymKeyCovTest, DhMallocFailTest001, TestSize.Level0)
 {
@@ -434,6 +436,7 @@ HWTEST_F(CryptoAsymKeyCovTest, DhGetEncodedDerTest001, TestSize.Level0)
     HcfObjDestroy(generator);
 }
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
 HWTEST_F(CryptoAsymKeyCovTest, Sm2GetEncodedDerTest001, TestSize.Level0)
 {
     HcfAsyKeyGenerator *generator = nullptr;
@@ -455,6 +458,7 @@ HWTEST_F(CryptoAsymKeyCovTest, Sm2GetEncodedDerTest001, TestSize.Level0)
     HcfObjDestroy(keyPair);
     HcfObjDestroy(generator);
 }
+#endif
 
 HWTEST_F(CryptoAsymKeyCovTest, RsaKeySpecIntTest001, TestSize.Level0)
 {
@@ -1220,6 +1224,7 @@ HWTEST_F(CryptoAsymKeyCovTest, CryptoAsymKeySpecDhTest001, TestSize.Level0)
     OH_CryptoAsymKeySpec_Destroy(spec);
 }
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
 HWTEST_F(CryptoAsymKeyCovTest, CryptoSm2KeyEncodeTest001, TestSize.Level0)
 {
     OH_CryptoAsymKeyGenerator *generator = nullptr;
@@ -1249,7 +1254,9 @@ HWTEST_F(CryptoAsymKeyCovTest, CryptoSm2KeyEncodeTest001, TestSize.Level0)
     OH_CryptoKeyPair_Destroy(keyPair);
     OH_CryptoAsymKeyGenerator_Destroy(generator);
 }
+#endif
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
 HWTEST_F(CryptoAsymKeyCovTest, CryptoSm2KeyGetParamTest001, TestSize.Level0)
 {
     OH_CryptoAsymKeyGenerator *generator = nullptr;
@@ -1272,6 +1279,7 @@ HWTEST_F(CryptoAsymKeyCovTest, CryptoSm2KeyGetParamTest001, TestSize.Level0)
     OH_CryptoKeyPair_Destroy(keyPair);
     OH_CryptoAsymKeyGenerator_Destroy(generator);
 }
+#endif
 
 HWTEST_F(CryptoAsymKeyCovTest, CryptoDhKeyEncodeTest001, TestSize.Level0)
 {

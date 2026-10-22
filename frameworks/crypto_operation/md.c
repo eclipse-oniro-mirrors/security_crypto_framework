@@ -65,7 +65,9 @@ static const HcfMdAbility MD_ABILITY_SET[] = {
     { "MD4", OpensslMdSpiCreate },
     { "RIPEMD160", OpensslMdSpiCreate },
     { "MD5", OpensslMdSpiCreate },
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
     { "SM3", OpensslMdSpiCreate },
+#endif
     { "SHAKE128", OpensslMdSpiCreate },
     { "SHAKE256", OpensslMdSpiCreate },
 #endif

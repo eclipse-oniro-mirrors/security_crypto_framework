@@ -75,6 +75,8 @@ if (os_level == "standard") {
       ]
       defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
     }
+
+    defines += crypto_sm_defines
   }
 } else if (os_level == "mini") {
   ohos_static_library("crypto_mbedtls_plugin_lib") {
