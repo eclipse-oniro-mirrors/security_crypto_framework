@@ -379,6 +379,7 @@ HWTEST_F(CryptoMdShakeTest, CryptoFrameworkMdShakeNotXofTest001, TestSize.Level0
     HcfObjDestroy(mdObj);
 }
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
 HWTEST_F(CryptoMdShakeTest, CryptoFrameworkMdShakeNotXofTest002, TestSize.Level0)
 {
     HcfMd *mdObj = nullptr;
@@ -391,6 +392,7 @@ HWTEST_F(CryptoMdShakeTest, CryptoFrameworkMdShakeNotXofTest002, TestSize.Level0
     HcfBlobDataClearAndFree(&outBlob);
     HcfObjDestroy(mdObj);
 }
+#endif
 
 HWTEST_F(CryptoMdShakeTest, CryptoFrameworkMdShakeNullTest001, TestSize.Level0)
 {

@@ -23,7 +23,9 @@
 #include "detailed_aead_params.h"
 #include "log.h"
 #include "memory.h"
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
 #include "sm4_common.h"
+#endif
 #include "sym_key_generator.h"
 
 using namespace testing::ext;
@@ -64,6 +66,7 @@ static HcfResult ConvertAesSymKeyFromData(const uint8_t *keyData, size_t keyLen,
     return ret;
 }
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
 static HcfResult ConvertSm4SymKeyFromData(const uint8_t *keyData, size_t keyLen, HcfSymKey **key)
 {
     HcfSymKeyGenerator *generator = nullptr;
@@ -76,6 +79,7 @@ static HcfResult ConvertSm4SymKeyFromData(const uint8_t *keyData, size_t keyLen,
     HcfObjDestroy(reinterpret_cast<HcfObjectBase *>(generator));
     return ret;
 }
+#endif
 
 static HcfResult ConvertChacha20SymKeyFromData(const uint8_t *keyData, size_t keyLen, HcfSymKey **key)
 {
@@ -364,6 +368,7 @@ HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecAesGcmUpdateThenDoFinalSu
     HcfObjDestroy(reinterpret_cast<HcfObjectBase *>(key));
 }
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
 HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecSm4GcmSuccess001, TestSize.Level0)
 {
     HcfCipher *cipher = nullptr;
@@ -390,7 +395,9 @@ HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecSm4GcmSuccess001, TestSiz
     HcfObjDestroy(reinterpret_cast<HcfObjectBase *>(cipher));
     HcfObjDestroy(reinterpret_cast<HcfObjectBase *>(key));
 }
+#endif
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
 HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecSm4GcmInvalidParam001, TestSize.Level0)
 {
     HcfCipher *cipher = nullptr;
@@ -419,7 +426,9 @@ HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecSm4GcmInvalidParam001, Te
     HcfObjDestroy(reinterpret_cast<HcfObjectBase *>(cipher));
     HcfObjDestroy(reinterpret_cast<HcfObjectBase *>(key));
 }
+#endif
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
 HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecSm4GcmUpdateThenDoFinalSuccess001, TestSize.Level0)
 {
     HcfCipher *cipher = nullptr;
@@ -453,6 +462,7 @@ HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecSm4GcmUpdateThenDoFinalSu
     HcfObjDestroy(reinterpret_cast<HcfObjectBase *>(cipher));
     HcfObjDestroy(reinterpret_cast<HcfObjectBase *>(key));
 }
+#endif
 
 HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecChacha20Poly1305Success001, TestSize.Level0)
 {
@@ -574,7 +584,9 @@ HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecChacha20Poly1305UpdateThe
 
 enum AeadVectorKeyType {
     AEAD_KEY_AES128 = 0,
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
     AEAD_KEY_SM4_128,
+#endif
     AEAD_KEY_CHACHA20,
 };
 
@@ -635,6 +647,7 @@ static AeadVectorCase GetAesGcmVector002(void)
         sizeof(tag), plain, sizeof(plain), cipher, sizeof(cipher) };
 }
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
 static AeadVectorCase GetSm4GcmVector001(void)
 {
     static const uint8_t key[] = {
@@ -663,6 +676,7 @@ static AeadVectorCase GetSm4GcmVector001(void)
     return { AEAD_KEY_SM4_128, "SM4_128|GCM|NoPadding", key, sizeof(key), iv, sizeof(iv), aad, sizeof(aad), tag,
         sizeof(tag), plain, sizeof(plain), cipher, sizeof(cipher) };
 }
+#endif
 
 static AeadVectorCase GetChacha20Poly1305Vector001(void)
 {
@@ -704,8 +718,10 @@ static HcfResult ConvertVectorKey(AeadVectorKeyType keyType, const uint8_t *keyD
     switch (keyType) {
         case AEAD_KEY_AES128:
             return ConvertAesSymKeyFromData(keyData, keyLen, key);
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
         case AEAD_KEY_SM4_128:
             return ConvertSm4SymKeyFromData(keyData, keyLen, key);
+#endif
         case AEAD_KEY_CHACHA20:
             return ConvertChacha20SymKeyFromData(keyData, keyLen, key);
         default:
@@ -797,6 +813,7 @@ HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecAesGcmVector002, TestSize
     FreeAeadVectorRuntime(rt);
 }
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
 HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecSm4GcmVector001, TestSize.Level0)
 {
     AeadVectorCase vec = GetSm4GcmVector001();
@@ -825,6 +842,7 @@ HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecSm4GcmVector001, TestSize
     ASSERT_EQ(memcmp(rt.decOutput.data, rt.plain.data, rt.plain.len), 0);
     FreeAeadVectorRuntime(rt);
 }
+#endif
 
 HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecChacha20Poly1305Vector001, TestSize.Level0)
 {
@@ -954,6 +972,7 @@ HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecAesGcmDoFinalNullEncrypt0
     HcfObjDestroy(reinterpret_cast<HcfObjectBase *>(key));
 }
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
 HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecSm4GcmUpdateOnlyDoFinal001, TestSize.Level0)
 {
     HcfCipher *cipher = nullptr;
@@ -981,7 +1000,9 @@ HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecSm4GcmUpdateOnlyDoFinal00
     HcfObjDestroy(reinterpret_cast<HcfObjectBase *>(cipher));
     HcfObjDestroy(reinterpret_cast<HcfObjectBase *>(key));
 }
+#endif
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
 HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecSm4GcmDoFinalNullEncrypt001, TestSize.Level0)
 {
     HcfCipher *cipher = nullptr;
@@ -1007,6 +1028,7 @@ HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecSm4GcmDoFinalNullEncrypt0
     HcfObjDestroy(reinterpret_cast<HcfObjectBase *>(cipher));
     HcfObjDestroy(reinterpret_cast<HcfObjectBase *>(key));
 }
+#endif
 
 HWTEST_F(CryptoAeadParamsSpecTest, CryptoAeadParamsSpecChacha20Poly1305UpdateOnlyDoFinal001, TestSize.Level0)
 {

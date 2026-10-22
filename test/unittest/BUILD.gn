@@ -80,7 +80,6 @@ ohos_unittest("crypto_framework_test") {
     "src/crypto_mac_test.cpp",
     "src/crypto_md_sha3_test.cpp",
     "src/crypto_md_shake_test.cpp",
-    "src/crypto_md_sm3_test.cpp",
     "src/crypto_md_test.cpp",
     "src/crypto_ml_kem_asy_key_generator_test.cpp",
     "src/crypto_ml_dsa_asy_key_generator_test.cpp",
@@ -107,16 +106,6 @@ ohos_unittest("crypto_framework_test") {
     "src/crypto_rsa_verify_test.cpp",
     "src/crypto_scrypt_test.cpp",
     "src/crypto_signature_exception_test.cpp",
-    "src/crypto_sm2_asy_key_generator_test.cpp",
-    "src/crypto_sm2_cipher_test.cpp",
-    "src/crypto_sm2_sign_test.cpp",
-    "src/crypto_sm2_verify_test.cpp",
-    "src/crypto_sm3_mac_test.cpp",
-    "src/crypto_sm4_cfb_cipher_test.cpp",
-    "src/crypto_sm4_cipher_test.cpp",
-    "src/crypto_sm4_ecb_cipher_test.cpp",
-    "src/crypto_sm4_gcm_cipher_test.cpp",
-    "src/crypto_sm4_generator_test.cpp",
     "src/crypto_x25519_asy_key_generator_by_spec_test.cpp",
     "src/crypto_x25519_asy_key_generator_test.cpp",
     "src/crypto_x25519_key_agreement_test.cpp",
@@ -147,10 +136,6 @@ ohos_unittest("crypto_framework_test") {
     "src/native/native_signature_test.cpp",
     "src/native/native_sym_cipher_test.cpp",
     "src/native/native_sym_key_test.cpp",
-    "src/sm2/crypto_sm2_asy_key_generator_by_spec_sub_test.cpp",
-    "src/sm2/crypto_sm2_asy_key_generator_by_spec_test.cpp",
-    "src/sm2/crypto_sm2_ecdsa_signature_test.cpp",
-    "src/sm2/crypto_sm2_util_test.cpp",
     "src/sym_algorithm/crypto_blowfish_cipher_test.cpp",
     "src/sym_algorithm/crypto_cast_cipher_test.cpp",
     "src/sym_algorithm/crypto_rc2_cipher_test.cpp",
@@ -183,8 +168,45 @@ ohos_unittest("crypto_framework_test") {
     "src/openssl_adapter_cipher_mock.c",
     "src/openssl_adapter_mock.c",
     "src/rsa_common_param_spec.cpp",
-    "src/sm4_common.cpp",
   ]
+
+  if (!crypto_framework_disable_sm2_sign) {
+    sources += [
+      "src/crypto_sm2_sign_test.cpp",
+      "src/crypto_sm2_verify_test.cpp",
+      "src/sm2/crypto_sm2_ecdsa_signature_test.cpp",
+    ]
+  }
+  if (!crypto_framework_disable_sm2_enc) {
+    sources += [
+      "src/crypto_sm2_cipher_test.cpp",
+      "src/sm2/crypto_sm2_util_test.cpp",
+    ]
+  }
+  if (!crypto_framework_disable_sm2_sign || !crypto_framework_disable_sm2_enc) {
+    sources += [
+      "src/crypto_sm2_asy_key_generator_test.cpp",
+      "src/sm2/crypto_sm2_asy_key_generator_by_spec_sub_test.cpp",
+      "src/sm2/crypto_sm2_asy_key_generator_by_spec_test.cpp",
+    ]
+  }
+  if (!crypto_framework_disable_sm3) {
+    sources += [
+      "src/crypto_md_sm3_test.cpp",
+      "src/crypto_sm3_mac_test.cpp",
+    ]
+  }
+  if (!crypto_framework_disable_sm4) {
+    sources += [
+      "src/crypto_sm4_cfb_cipher_test.cpp",
+      "src/crypto_sm4_cipher_test.cpp",
+      "src/crypto_sm4_ecb_cipher_test.cpp",
+      "src/crypto_sm4_gcm_cipher_test.cpp",
+      "src/crypto_sm4_generator_test.cpp",
+      "src/sm4_common.cpp",
+    ]
+  }
+
   cflags = [ "-DHILOG_ENABLE" ]
   if (target_cpu == "arm") {
     cflags += [ "-DBINDER_IPC_32BIT" ]
@@ -229,6 +251,8 @@ ohos_unittest("crypto_framework_test") {
     "HILOG_ENABLE",
     "OPENSSL_SUPPRESS_DEPRECATED",
   ]
+
+  defines += crypto_sm_defines
 
   external_deps = [
     "bounds_checking_function:libsec_shared",

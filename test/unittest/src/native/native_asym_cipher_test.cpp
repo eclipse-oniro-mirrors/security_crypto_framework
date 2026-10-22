@@ -97,6 +97,7 @@ HWTEST_F(NativeAsymCipherTest, NativeAsymCipherTest001, TestSize.Level0)
     OH_CryptoKeyPair_Destroy(keyPair);
 }
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
 HWTEST_F(NativeAsymCipherTest, NativeAsymCipherTest002, TestSize.Level0)
 {
     OH_CryptoAsymKeyGenerator *keyGen = nullptr;
@@ -108,7 +109,9 @@ HWTEST_F(NativeAsymCipherTest, NativeAsymCipherTest002, TestSize.Level0)
     EXPECT_EQ(ret, CRYPTO_SUCCESS);
     OH_CryptoAsymKeyGenerator_Destroy(keyGen);
 }
+#endif
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
 HWTEST_F(NativeAsymCipherTest, NativeAsymCipherTest003, TestSize.Level0)
 {
     OH_CryptoAsymKeyGenerator *keyGen = nullptr;
@@ -130,7 +133,9 @@ HWTEST_F(NativeAsymCipherTest, NativeAsymCipherTest003, TestSize.Level0)
     OH_CryptoAsymKeyGenerator_Destroy(keyGen);
     OH_CryptoKeyPair_Destroy(keyPair);
 }
+#endif
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC) && !defined(CRYPTO_FRAMEWORK_DISABLE_SM3)
 HWTEST_F(NativeAsymCipherTest, NativeAsymCipherTest004, TestSize.Level0)
 {
     OH_CryptoAsymKeyGenerator *keyGen = nullptr;
@@ -157,7 +162,9 @@ HWTEST_F(NativeAsymCipherTest, NativeAsymCipherTest004, TestSize.Level0)
     OH_CryptoAsymKeyGenerator_Destroy(keyGen);
     OH_CryptoKeyPair_Destroy(keyPair);
 }
+#endif
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC) && !defined(CRYPTO_FRAMEWORK_DISABLE_SM3)
 HWTEST_F(NativeAsymCipherTest, NativeAsymCipherTest005, TestSize.Level0)
 {
     OH_CryptoAsymKeyGenerator *keyGen = nullptr;
@@ -208,7 +215,9 @@ HWTEST_F(NativeAsymCipherTest, NativeAsymCipherTest005, TestSize.Level0)
     OH_CryptoAsymKeyGenerator_Destroy(keyGen);
     OH_CryptoKeyPair_Destroy(keyPair);
 }
+#endif
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC) && !defined(CRYPTO_FRAMEWORK_DISABLE_SM3)
 HWTEST_F(NativeAsymCipherTest, NativeAsymCipherTest006, TestSize.Level0)
 {
     OH_CryptoAsymKeyGenerator *keyGen = nullptr;
@@ -244,7 +253,9 @@ HWTEST_F(NativeAsymCipherTest, NativeAsymCipherTest006, TestSize.Level0)
     OH_CryptoAsymKeyGenerator_Destroy(keyGen);
     OH_CryptoKeyPair_Destroy(keyPair);
 }
+#endif
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
 HWTEST_F(NativeAsymCipherTest, NativeAsymCipherTest007, TestSize.Level0)
 {
     uint8_t testData[] = {
@@ -359,3 +370,4 @@ HWTEST_F(NativeAsymCipherTest, NativeAsymCipherTest008, TestSize.Level0)
     OH_Crypto_FreeDataBlob(&encoded);
     OH_CryptoSm2CiphertextSpec_Destroy(sm2CipherSpec);
 }
+#endif

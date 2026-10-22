@@ -47,7 +47,9 @@ constexpr uint32_t SHA256_LEN = 32;
 constexpr uint32_t SHA384_LEN = 48;
 constexpr uint32_t SHA512_LEN = 64;
 constexpr uint32_t MD5_LEN = 16;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
 constexpr uint32_t SM3_LEN = 32;
+#endif
 
 static char g_testBigData[] = "VqRH5dzdeeturr5zN5vE77DtqjV7kNKbDJqk4mNqyYRTXymhjR\r\n"
 "Yz8c2pNvJiCxyFwvLvWfPh2Y2eDAuxbdm2Dt4UzKJtNqEpNYKVZLiyH4a4MhR4BpFhvhJVHy2ALbYq2rW\r\n"
@@ -1074,7 +1076,9 @@ HWTEST_F(CryptoMacTest, CryptoFrameworkHmacKeyAlgoNameTest001, TestSize.Level0)
     TestHmacKeyAlgoName("HMAC|SHA256", 32, "HMAC256");
     TestHmacKeyAlgoName("HMAC|SHA384", 48, "HMAC384");
     TestHmacKeyAlgoName("HMAC|SHA512", 64, "HMAC512");
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
     TestHmacKeyAlgoName("HMAC|SM3", 32, "HMAC256");
+#endif
     TestHmacKeyAlgoName("HMAC|MD5", 16, "HMAC128");
 
     TestHmacKeyAlgoName("HMAC", 1, "HMAC8");
@@ -1097,7 +1101,9 @@ std::vector<std::pair<std::string, uint32_t>> macMdAlgoParams = {
     { "SHA3-384", SHA384_LEN },
     { "SHA3-512", SHA512_LEN },
     { "MD5", MD5_LEN },
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
     { "SM3", SM3_LEN },
+#endif
 };
 
 INSTANTIATE_TEST_SUITE_P(CryptoMacTestParam, CryptoMacTest,

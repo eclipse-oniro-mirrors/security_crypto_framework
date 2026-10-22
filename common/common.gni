@@ -11,6 +11,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+declare_args() {
+  crypto_framework_enabled = true
+  crypto_framework_disable_sm2_sign = false
+  crypto_framework_disable_sm2_enc = false
+  crypto_framework_disable_sm3 = false
+  crypto_framework_disable_sm4 = false
+}
+
+crypto_sm_defines = []
+if (crypto_framework_disable_sm2_sign) {
+  crypto_sm_defines += [ "CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN" ]
+}
+if (crypto_framework_disable_sm2_enc) {
+  crypto_sm_defines += [ "CRYPTO_FRAMEWORK_DISABLE_SM2_ENC" ]
+}
+if (crypto_framework_disable_sm3) {
+  crypto_sm_defines += [ "CRYPTO_FRAMEWORK_DISABLE_SM3" ]
+}
+if (crypto_framework_disable_sm4) {
+  crypto_sm_defines += [ "CRYPTO_FRAMEWORK_DISABLE_SM4" ]
+}
+
 crypto_framwork_common_inc_path = [
   "//base/security/crypto_framework/interfaces/inner_api/common",
   "//base/security/crypto_framework/interfaces/inner_api/algorithm_parameter",

@@ -92,6 +92,7 @@ static OH_Crypto_ErrCode CalculateMacTest(OH_CryptoMac *ctx, OH_CryptoSymKey *ke
     return CRYPTO_SUCCESS;
 }
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
 HWTEST_F(NativeMacTest, NativeMacTest001, TestSize.Level0)
 {
     OH_CryptoSymKey *keyCtx = GenSymKey("HMAC|SM3");
@@ -113,6 +114,7 @@ HWTEST_F(NativeMacTest, NativeMacTest001, TestSize.Level0)
     OH_CryptoMac_Destroy(ctx);
     OH_CryptoSymKey_Destroy(keyCtx);
 }
+#endif
 
 HWTEST_F(NativeMacTest, NativeMacTest002, TestSize.Level0)
 {
@@ -149,6 +151,7 @@ HWTEST_F(NativeMacTest, NativeMacTest003, TestSize.Level0)
     OH_CryptoMac_Destroy(ctx);
 }
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
 HWTEST_F(NativeMacTest, NativeMacTest004, TestSize.Level0)
 {
     OH_CryptoMac *ctx = nullptr;
@@ -168,7 +171,9 @@ HWTEST_F(NativeMacTest, NativeMacTest004, TestSize.Level0)
 
     OH_CryptoMac_Destroy(ctx);
 }
+#endif
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
 HWTEST_F(NativeMacTest, NativeMacTest005, TestSize.Level0)
 {
     OH_CryptoMac *ctx = nullptr;
@@ -188,6 +193,7 @@ HWTEST_F(NativeMacTest, NativeMacTest005, TestSize.Level0)
 
     OH_CryptoMac_Destroy(ctx);
 }
+#endif
 
 HWTEST_F(NativeMacTest, NativeMacTest006, TestSize.Level0)
 {

@@ -37,6 +37,8 @@ if (os_level == "standard") {
       "-Wall",
     ]
 
+    defines += crypto_sm_defines
+
     external_deps = [
       "bounds_checking_function:libsec_shared",
       "c_utils:utils",

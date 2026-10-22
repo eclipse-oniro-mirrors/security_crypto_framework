@@ -1431,6 +1431,7 @@ HWTEST_F(CryptoRsaAsyKeyPemTest, CryptoRsaAsyKeyPemErrorTest007, TestSize.Level0
 }
 
 // test getEncodedPem sm2 pubkey and prikey
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
 HWTEST_F(CryptoRsaAsyKeyPemTest, CryptoRsaAsyKeyPemErrorTest008, TestSize.Level0)
 {
     HcfAsyKeyGenerator *generator = nullptr;
@@ -1462,6 +1463,7 @@ HWTEST_F(CryptoRsaAsyKeyPemTest, CryptoRsaAsyKeyPemErrorTest008, TestSize.Level0
     HcfObjDestroy(keyPair);
     HcfObjDestroy(generator);
 }
+#endif
 
 // test getEncodedPem Ed25519 pubkey and prikey
 HWTEST_F(CryptoRsaAsyKeyPemTest, CryptoRsaAsyKeyPemErrorTest009, TestSize.Level0)

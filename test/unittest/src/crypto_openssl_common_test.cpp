@@ -70,9 +70,11 @@ HWTEST_F(CryptoOsslCommonTest, CryptoOsslCommonTest06, TestSize.Level0)
     EXPECT_EQ(ret, HCF_INVALID_PARAMS);
 }
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC) && !defined(CRYPTO_FRAMEWORK_DISABLE_SM3)
 HWTEST_F(CryptoOsslCommonTest, CryptoOsslCommonTest07, TestSize.Level0)
 {
     HcfResult ret = GetSm2SpecStringSm3(nullptr);
     EXPECT_EQ(ret, HCF_INVALID_PARAMS);
 }
+#endif
 }

@@ -25,7 +25,9 @@
 #include "params_parser.h"
 #include "signature_spi.h"
 #include "signature_rsa_openssl.h"
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN
 #include "sm2_openssl.h"
+#endif
 #include "ed25519_openssl.h"
 #include "ml_dsa_openssl.h"
 #include "utils.h"
@@ -66,7 +68,9 @@ static const HcfSignGenAbility SIGN_GEN_ABILITY_SET[] = {
     { HCF_ALG_ECC, HcfSignSpiEcdsaCreate },
     { HCF_ALG_RSA, HcfSignSpiRsaCreate },
     { HCF_ALG_DSA, HcfSignSpiDsaCreate },
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN
     { HCF_ALG_SM2, HcfSignSpiSm2Create },
+#endif
     { HCF_ALG_ECC_BRAINPOOL, HcfSignSpiEcdsaCreate },
     { HCF_ALG_ED25519, HcfSignSpiEd25519Create },
     { HCF_ALG_ML_DSA, HcfSignSpiMlDsaCreate },
@@ -76,7 +80,9 @@ static const HcfVerifyGenAbility VERIFY_GEN_ABILITY_SET[] = {
     { HCF_ALG_ECC, HcfVerifySpiEcdsaCreate },
     { HCF_ALG_RSA, HcfVerifySpiRsaCreate },
     { HCF_ALG_DSA, HcfVerifySpiDsaCreate },
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN
     { HCF_ALG_SM2, HcfVerifySpiSm2Create },
+#endif
     { HCF_ALG_ECC_BRAINPOOL, HcfVerifySpiEcdsaCreate },
     { HCF_ALG_ED25519, HcfVerifySpiEd25519Create },
     { HCF_ALG_ML_DSA, HcfVerifySpiMlDsaCreate },
@@ -132,9 +138,11 @@ static void SetKeyTypeDefault(HcfAlgParaValue value,  HcfSignatureParams *params
         case HCF_ALG_DSA_DEFAULT:
             paramsObj->algo = HCF_ALG_DSA;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN
         case HCF_ALG_SM2_DEFAULT:
             paramsObj->algo = HCF_ALG_SM2;
             break;
+#endif
         case HCF_ALG_ECC_BRAINPOOL_DEFAULT:
             paramsObj->algo = HCF_ALG_ECC_BRAINPOOL;
             break;
@@ -224,9 +232,11 @@ static bool SetDsaKeyType(HcfAlgParaValue value, HcfSignatureParams *paramsObj)
 static bool SetSingleKeyType(HcfAlgParaValue value, HcfSignatureParams *paramsObj)
 {
     switch (value) {
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN
         case HCF_ALG_SM2_256:
             paramsObj->algo = HCF_ALG_SM2;
             return true;
+#endif
         case HCF_ALG_ED25519_256:
             paramsObj->algo = HCF_ALG_ED25519;
             return true;
