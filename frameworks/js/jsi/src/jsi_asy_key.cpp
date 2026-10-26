@@ -94,6 +94,10 @@ JSIValue CryptoFrameworkLiteModule::CreateAsyKeyGenerator(const JSIValue thisVal
     JSI::SetNamedProperty(serviceObj, "convertKeySync", convertKeySync);
     JSI::SetNamedProperty(serviceObj, "convertPemKey", convertPemKey);
     JSI::SetNamedProperty(serviceObj, "convertPemKeySync", convertPemKeySync);
+    const char *algo = generator->getAlgoName(generator);
+    if (algo != nullptr) {
+        JSI::SetStringProperty(serviceObj, "algName", algo);
+    }
     JSI::SetNumberProperty(serviceObj, "generatorObj", (double)(uint32_t)generator);
     JSI::ReleaseValueList(generateKeyPair, generateKeyPairSync, convertKey, convertKeySync,
         convertPemKey, convertPemKeySync, ARGS_END);
@@ -136,16 +140,48 @@ JSIValue CryptoFrameworkLiteModule::GenerateKeyPairSync(const JSIValue thisVal, 
 
 JSIValue CryptoFrameworkLiteModule::GenerateKeyPair(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
-    if ((args == nullptr) || (argsNum != ARRAY_INDEX_ONE)) {
+    if (argsNum == ARRAY_INDEX_ZERO) {
+        LOGE("GenerateKeyPair promise is not supported.");
+        return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT),
+            "GenerateKeyPair promise is not supported.");
+    }
+    if ((args == nullptr) || (argsNum != ARGS_SIZE_ONE)) {
         LOGE("GenerateKeyPair args is err!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "GenerateKeyPair args is err!");
     }
     if (args[ARRAY_INDEX_ZERO] == nullptr) {
         LOGE("GenerateKeyPair promise is not supported.");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT),
-            "GenerateKeyPair is not supported.");
+            "GenerateKeyPair promise is not supported.");
     }
-    CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ZERO], HCF_NOT_SUPPORT, JSI::CreateNull());
+    HcfAsyKeyGenerator *generator =
+        reinterpret_cast<HcfAsyKeyGenerator *>((uint32_t)JSI::GetNumberProperty(thisVal, "generatorObj"));
+    if (generator == nullptr) {
+        LOGE("GenerateKeyPair generator is null!");
+        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ZERO], HCF_INVALID_PARAMS, JSI::CreateNull());
+        return JSI::CreateUndefined();
+    }
+    HcfKeyPair *keyPair = nullptr;
+    HcfResult res = generator->generateKeyPair(generator, nullptr, &keyPair);
+    if (res != HCF_SUCCESS) {
+        LOGE("GenerateKeyPair generateKeyPair err res %d!", res);
+        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ZERO], res, JSI::CreateNull());
+        return JSI::CreateUndefined();
+    }
+    res = ListAddObjNode(JSI_ALG_ASY_KEY_PAIR, (uint32_t)keyPair);
+    if (res != HCF_SUCCESS) {
+        LOGE("GenerateKeyPair add node is %d err!", res);
+        HcfObjDestroy(static_cast<void *>(keyPair));
+        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ZERO], res, JSI::CreateNull());
+        return JSI::CreateUndefined();
+    }
+    JSIValue keyPairObj = ConstructKeyPairJsObject(keyPair);
+    if (keyPairObj == nullptr) {
+        LOGE("GenerateKeyPair construct keyPair obj failed!");
+        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ZERO], HCF_ERR_CRYPTO_OPERATION, JSI::CreateNull());
+        return JSI::CreateUndefined();
+    }
+    CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_ZERO], HCF_SUCCESS, keyPairObj);
     return JSI::CreateUndefined();
 }
 
@@ -168,7 +204,7 @@ JSIValue CryptoFrameworkLiteModule::ConvertKeySync(const JSIValue thisVal, const
 
     JSIValue inValue = JSI::GetNamedProperty(args[ARRAY_INDEX_ZERO], "data");
     HcfBlob pubKeyBlob = { .data = nullptr, .len = 0 };
-    HcfResult errCode = ParseUint8ArrayToBlob(inValue, &pubKeyBlob);
+    HcfResult errCode = ParseUint8ArrayToDatablob(inValue, &pubKeyBlob);
     if (errCode != HCF_SUCCESS) {
         LOGE("ConvertKeySync pubKeyBlob is null!");
         return ThrowErrorCodeResult(errCode);
@@ -211,7 +247,7 @@ static bool ConvertKeyParseParams(const JSIValue thisVal, const JSIValue *args,
         return false;
     }
     JSIValue inValue = JSI::GetNamedProperty(args[ARRAY_INDEX_ZERO], "data");
-    HcfResult errCode = ParseUint8ArrayToBlob(inValue, pubKeyBlob);
+    HcfResult errCode = ParseUint8ArrayToDatablob(inValue, pubKeyBlob);
     if (errCode != HCF_SUCCESS) {
         LOGE("ConvertKey pubKeyBlob is null!");
         CallbackErrorCodeOrDataResult(thisVal, callback, errCode, JSI::CreateNull());
@@ -222,14 +258,14 @@ static bool ConvertKeyParseParams(const JSIValue thisVal, const JSIValue *args,
 
 JSIValue CryptoFrameworkLiteModule::ConvertKey(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
-    if ((args == nullptr) || (argsNum != ARGS_SIZE_THREE)) {
+    if ((args == nullptr) || (argsNum != ARGS_SIZE_TWO && argsNum != ARGS_SIZE_THREE)) {
         LOGE("ConvertKey args is err!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "ConvertKey args is err!");
     }
-    if (args[ARRAY_INDEX_TWO] == nullptr) {
+    if ((argsNum == ARGS_SIZE_TWO) || (args[ARRAY_INDEX_TWO] == nullptr)) {
         LOGE("ConvertKey promise is not supported.");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT),
-            "ConvertKey is not supported.");
+            "ConvertKey promise is not supported.");
     }
     HcfAsyKeyGenerator *generator = nullptr;
     HcfBlob pubKeyBlob = { .data = nullptr, .len = 0 };

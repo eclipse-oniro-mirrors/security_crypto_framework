@@ -54,6 +54,14 @@ JSIValue CryptoFrameworkLiteModule::ConstructPriKeyJsObject(HcfPriKey *priKey)
     JSI::SetNamedProperty(priKeyObj, "getKeyData", getKeyData);
     JSI::SetNamedProperty(priKeyObj, "getKeyDataSync", getKeyDataSync);
     JSI::SetNamedProperty(priKeyObj, "clearMem", clearMem);
+    const char *algo = priKey->base.getAlgorithm((HcfKey *)priKey);
+    if (algo != nullptr) {
+        JSI::SetStringProperty(priKeyObj, "algName", algo);
+    }
+    const char *format = priKey->base.getFormat((HcfKey *)priKey);
+    if (format != nullptr) {
+        JSI::SetStringProperty(priKeyObj, "format", format);
+    }
     JSI::ReleaseValueList(getEncoded, getEncodedDer, getEncodedPem, getAsyKeySpec, getKeySize, getPubKey,
         getPubKeySync, getKeyData, getKeyDataSync, clearMem, ARGS_END);
     return priKeyObj;
