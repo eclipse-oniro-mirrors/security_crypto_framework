@@ -48,6 +48,14 @@ JSIValue CryptoFrameworkLiteModule::ConstructPubKeyJsObject(HcfPubKey *pubKey)
     JSI::SetNamedProperty(pubKeyObj, "getKeySize", getKeySize);
     JSI::SetNamedProperty(pubKeyObj, "getKeyData", getKeyData);
     JSI::SetNamedProperty(pubKeyObj, "getKeyDataSync", getKeyDataSync);
+    const char *algo = pubKey->base.getAlgorithm((HcfKey *)pubKey);
+    if (algo != nullptr) {
+        JSI::SetStringProperty(pubKeyObj, "algName", algo);
+    }
+    const char *format = pubKey->base.getFormat((HcfKey *)pubKey);
+    if (format != nullptr) {
+        JSI::SetStringProperty(pubKeyObj, "format", format);
+    }
     JSI::ReleaseValueList(getEncodedDer, getEncoded, getEncodedPem, getAsyKeySpec, getKeySize, getKeyData,
         getKeyDataSync, ARGS_END);
     return pubKeyObj;
@@ -118,14 +126,14 @@ JSIValue CryptoFrameworkLiteModule::PubKeyGetKeyDataSync(const JSIValue thisVal,
 
 JSIValue CryptoFrameworkLiteModule::PubKeyGetKeyData(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
-    if ((args == nullptr) || (argsNum != ARGS_SIZE_TWO)) {
+    if ((args == nullptr) || (argsNum != ARGS_SIZE_ONE && argsNum != ARGS_SIZE_TWO)) {
         LOGE("PubKeyGetKeyData args is err!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "PubKeyGetKeyData args is err!");
     }
-    if (args[ARRAY_INDEX_ONE] == nullptr) {
+    if ((argsNum == ARGS_SIZE_ONE) || (args[ARRAY_INDEX_ONE] == nullptr)) {
         LOGE("PubKeyGetKeyData promise is not supported.");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT),
-            "PubKeyGetKeyData is not supported.");
+            "PubKeyGetKeyData promise is not supported.");
     }
     HcfPubKey *pubKey = reinterpret_cast<HcfPubKey *>((uint32_t)JSI::GetNumberProperty(thisVal, "pubKeyObj"));
     if (pubKey == nullptr) {

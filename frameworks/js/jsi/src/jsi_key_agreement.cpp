@@ -59,6 +59,10 @@ JSIValue CryptoFrameworkLiteModule::CreateKeyAgreement(const JSIValue thisVal, c
     JSIValue generateSecretSync = JSI::CreateFunction(GenerateSecretSync);
     JSI::SetNamedProperty(serviceObj, "generateSecret", generateSecret);
     JSI::SetNamedProperty(serviceObj, "generateSecretSync", generateSecretSync);
+    const char *algo = keyAgreement->getAlgoName(keyAgreement);
+    if (algo != nullptr) {
+        JSI::SetStringProperty(serviceObj, "algName", algo);
+    }
     JSI::SetNumberProperty(serviceObj, "keyAgreementObj", (double)(uint32_t)keyAgreement);
     JSI::ReleaseValueList(generateSecret, generateSecretSync, ARGS_END);
 
@@ -107,16 +111,48 @@ JSIValue CryptoFrameworkLiteModule::GenerateSecretSync(const JSIValue thisVal, c
 
 JSIValue CryptoFrameworkLiteModule::GenerateSecret(const JSIValue thisVal, const JSIValue *args, uint8_t argsNum)
 {
-    if ((args == nullptr) || (argsNum != ARGS_SIZE_THREE)) {
+    if ((args == nullptr) || (argsNum != ARGS_SIZE_TWO && argsNum != ARGS_SIZE_THREE)) {
         LOGE("GenerateSecret args is err!");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_INVALID_PARAMS), "GenerateSecret args is err!");
     }
-    if (args[ARRAY_INDEX_TWO] == nullptr) {
+    if ((argsNum == ARGS_SIZE_TWO) || (args[ARRAY_INDEX_TWO] == nullptr)) {
         LOGE("GenerateSecret promise is not supported.");
         return JSI::CreateErrorWithCode(GetJsiErrValueByErrCode(HCF_NOT_SUPPORT),
-            "GenerateSecret is not supported.");
+            "GenerateSecret promise is not supported.");
     }
-    CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_TWO], HCF_NOT_SUPPORT, JSI::CreateNull());
+    HcfKeyAgreement *keyAgreement =
+        reinterpret_cast<HcfKeyAgreement *>((uint32_t)JSI::GetNumberProperty(thisVal, "keyAgreementObj"));
+    if (keyAgreement == nullptr) {
+        LOGE("GenerateSecret keyAgreement is null!");
+        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_TWO], HCF_INVALID_PARAMS, JSI::CreateNull());
+        return JSI::CreateUndefined();
+    }
+    HcfPriKey *priKey =
+        reinterpret_cast<HcfPriKey *>((uint32_t)JSI::GetNumberProperty(args[ARRAY_INDEX_ZERO], "priKeyObj"));
+    if (priKey == nullptr) {
+        LOGE("GenerateSecret priKey is null!");
+        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_TWO], HCF_INVALID_PARAMS, JSI::CreateNull());
+        return JSI::CreateUndefined();
+    }
+    HcfPubKey *pubKey =
+        reinterpret_cast<HcfPubKey *>((uint32_t)JSI::GetNumberProperty(args[ARRAY_INDEX_ONE], "pubKeyObj"));
+    if (pubKey == nullptr) {
+        LOGE("GenerateSecret pubKey is null!");
+        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_TWO], HCF_INVALID_PARAMS, JSI::CreateNull());
+        return JSI::CreateUndefined();
+    }
+
+    HcfBlob returnSecret = { .data = nullptr, .len = 0 };
+    HcfResult res = keyAgreement->generateSecret(keyAgreement, priKey, pubKey, &returnSecret);
+    if (res != HCF_SUCCESS) {
+        LOGE("GenerateSecret generateSecret err res %d!", res);
+        HcfBlobDataClearAndFree(&returnSecret);
+        CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_TWO], res, JSI::CreateNull());
+        return JSI::CreateUndefined();
+    }
+    JSIValue outValue = ConstructJSIReturnResult(&returnSecret);
+    HcfBlobDataClearAndFree(&returnSecret);
+    CallbackErrorCodeOrDataResult(thisVal, args[ARRAY_INDEX_TWO], HCF_SUCCESS, outValue);
     return JSI::CreateUndefined();
 }
 

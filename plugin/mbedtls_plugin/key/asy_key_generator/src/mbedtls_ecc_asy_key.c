@@ -296,7 +296,7 @@ static HcfResult GetEccPubKeyData(const HcfPubKey *self, uint32_t type, HcfBlob 
         return WriteUncompressedPoint(impl->ecKey, returnBlob);
     }
     LOGE("Unsupported type %u for public key.", type);
-    return HCF_NOT_SUPPORT;
+    return HCF_INVALID_PARAMS;
 }
 
 static HcfResult PackEccPubKey(mbedtls_ecp_keypair *ecKey, int32_t keyBits, HcfPubKey **returnObj)
