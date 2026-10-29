@@ -125,9 +125,7 @@ static void FreeCipherFwkCtx(napi_env env, CipherFwkCtx &context)
     }
 
     if (context->output.data != nullptr) {
-        HcfFree(context->output.data);
-        context->output.data = nullptr;
-        context->output.len = 0;
+        HcfBlobDataClearAndFree(&context->output);
     }
     FreeParamsSpec(context->paramsSpec);
     context->paramsSpec = nullptr;

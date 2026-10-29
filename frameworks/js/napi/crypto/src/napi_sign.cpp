@@ -148,7 +148,7 @@ static void FreeSignUpdateCtx(napi_env env, SignUpdateCtx *ctx)
         ctx->signRef = nullptr;
     }
 
-    HcfBlobDataFree(ctx->data);
+    HcfBlobDataClearAndFree(ctx->data);
     HcfFree(ctx->data);
     ctx->data = nullptr;
     HcfFree(ctx->cryptoErrMsg);
@@ -177,9 +177,7 @@ static void FreeSignDoFinalCtx(napi_env env, SignDoFinalCtx *ctx)
     }
 
     if (ctx->returnSignatureData.data != nullptr) {
-        HcfFree(ctx->returnSignatureData.data);
-        ctx->returnSignatureData.data = nullptr;
-        ctx->returnSignatureData.len = 0;
+        HcfBlobDataClearAndFree(&ctx->returnSignatureData);
     }
 
     HcfBlobDataClearAndFree(ctx->data);

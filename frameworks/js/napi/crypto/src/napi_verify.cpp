@@ -195,10 +195,10 @@ static void FreeVerifyDoFinalCtx(napi_env env, VerifyDoFinalCtx *ctx)
         ctx->verifyRef = nullptr;
     }
 
-    HcfBlobDataFree(ctx->data);
+    HcfBlobDataClearAndFree(ctx->data);
     HcfFree(ctx->data);
     ctx->data = nullptr;
-    HcfBlobDataFree(ctx->signatureData);
+    HcfBlobDataClearAndFree(ctx->signatureData);
     HcfFree(ctx->signatureData);
     ctx->signatureData = nullptr;
     HcfFree(ctx->cryptoErrMsg);
@@ -228,7 +228,7 @@ static void FreeVerifyRecoverCtx(napi_env env, VerifyRecoverCtx *ctx)
         ctx->rawSignatureData.len = 0;
     }
 
-    HcfBlobDataFree(ctx->signatureData);
+    HcfBlobDataClearAndFree(ctx->signatureData);
     HcfFree(ctx->signatureData);
     ctx->signatureData = nullptr;
     HcfFree(ctx->cryptoErrMsg);
@@ -1005,7 +1005,7 @@ napi_value NapiVerify::JsRecoverSync(napi_env env, napi_callback_info info)
 
     HcfBlob rawSignatureData = { .data = nullptr, .len = 0};
     HcfResult res = verify->recover(verify, &signatureData, &rawSignatureData);
-    HcfBlobDataFree(&signatureData);
+    HcfBlobDataClearAndFree(&signatureData);
     if (res != HCF_SUCCESS) {
         NAPI_LOG_THROW_EX(env, res, "failed to verify recover.");
         return nullptr;
@@ -1013,7 +1013,7 @@ napi_value NapiVerify::JsRecoverSync(napi_env env, napi_callback_info info)
 
     napi_value instance = nullptr;
     res = ConvertDataBlobToNapiValue(env, &rawSignatureData, &instance);
-    HcfBlobDataFree(&rawSignatureData);
+    HcfBlobDataClearAndFree(&rawSignatureData);
     if (res != HCF_SUCCESS) {
         NAPI_LOG_THROW(env, res, "verify recover convert dataBlob to napi_value failed!");
         return nullptr;
