@@ -21,10 +21,6 @@ ohos_static_library("cryptoframework_jsi") {
   part_name = "crypto_framework"
   include_dirs = [ "inc" ]
   include_dirs += framework_inc_path
-  include_dirs += [
-    "../../../../../hiviewdfx/hilog_lite/interfaces/native/kits/hilog_lite",
-    "//foundation/arkui/ace_engine_lite/interfaces/inner_api/buitin",
-  ]
 
   sources = [
     "src/jsi_api.cpp",
@@ -49,6 +45,8 @@ ohos_static_library("cryptoframework_jsi") {
     "../../../common:crypto_common_lite",
     "../../../frameworks:crypto_framework_lib",
   ]
+
+  external_deps = [ "hilog_lite:hilog_lite" ]
 
   configs = [ "${product_path}:product_public_configs" ]
 }
