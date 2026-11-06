@@ -25,7 +25,7 @@
 #include "params_parser.h"
 #include "signature_spi.h"
 #include "signature_rsa_openssl.h"
-#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) && !defined(CRYPTO_FRAMEWORK_DISABLE_SM3)
 #include "sm2_openssl.h"
 #endif
 #include "ed25519_openssl.h"
@@ -68,7 +68,7 @@ static const HcfSignGenAbility SIGN_GEN_ABILITY_SET[] = {
     { HCF_ALG_ECC, HcfSignSpiEcdsaCreate },
     { HCF_ALG_RSA, HcfSignSpiRsaCreate },
     { HCF_ALG_DSA, HcfSignSpiDsaCreate },
-#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) && !defined(CRYPTO_FRAMEWORK_DISABLE_SM3)
     { HCF_ALG_SM2, HcfSignSpiSm2Create },
 #endif
     { HCF_ALG_ECC_BRAINPOOL, HcfSignSpiEcdsaCreate },
@@ -80,7 +80,7 @@ static const HcfVerifyGenAbility VERIFY_GEN_ABILITY_SET[] = {
     { HCF_ALG_ECC, HcfVerifySpiEcdsaCreate },
     { HCF_ALG_RSA, HcfVerifySpiRsaCreate },
     { HCF_ALG_DSA, HcfVerifySpiDsaCreate },
-#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) && !defined(CRYPTO_FRAMEWORK_DISABLE_SM3)
     { HCF_ALG_SM2, HcfVerifySpiSm2Create },
 #endif
     { HCF_ALG_ECC_BRAINPOOL, HcfVerifySpiEcdsaCreate },
@@ -138,7 +138,7 @@ static void SetKeyTypeDefault(HcfAlgParaValue value,  HcfSignatureParams *params
         case HCF_ALG_DSA_DEFAULT:
             paramsObj->algo = HCF_ALG_DSA;
             break;
-#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) && !defined(CRYPTO_FRAMEWORK_DISABLE_SM3)
         case HCF_ALG_SM2_DEFAULT:
             paramsObj->algo = HCF_ALG_SM2;
             break;
@@ -232,7 +232,7 @@ static bool SetDsaKeyType(HcfAlgParaValue value, HcfSignatureParams *paramsObj)
 static bool SetSingleKeyType(HcfAlgParaValue value, HcfSignatureParams *paramsObj)
 {
     switch (value) {
-#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) && !defined(CRYPTO_FRAMEWORK_DISABLE_SM3)
         case HCF_ALG_SM2_256:
             paramsObj->algo = HCF_ALG_SM2;
             return true;

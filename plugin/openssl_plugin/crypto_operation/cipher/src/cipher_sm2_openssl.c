@@ -98,7 +98,12 @@ static HcfResult GetSm2CipherSpecString(HcfCipherGeneratorSpi *self, CipherSpecI
         return HCF_INVALID_PARAMS;
     }
     // only support sm3
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
     return GetSm2SpecStringSm3(returnString);
+#else
+    LOGE("SM3 digest is disabled, SM2 cipher spec string is unavailable.");
+    return HCF_NOT_SUPPORT;
+#endif
 }
 
 static HcfResult GetSm2CipherSpecUint8Array(HcfCipherGeneratorSpi *self, CipherSpecItem item, HcfBlob *returnUint8Array)
