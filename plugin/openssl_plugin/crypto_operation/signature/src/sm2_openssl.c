@@ -58,12 +58,18 @@ typedef struct {
 
 static bool IsDigestAlgValid(uint32_t alg)
 {
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
     if (alg == HCF_OPENSSL_DIGEST_SM3) {
         return true;
     } else {
         LOGE("Invalid digest num!");
         return false;
     }
+#else
+    (void)alg;
+    LOGE("SM3 digest is disabled, SM2 sign/verify is unavailable.");
+    return false;
+#endif
 }
 
 // export interfaces
