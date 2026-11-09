@@ -33,8 +33,6 @@ static JSIValue CreateCryptoMode(void)
 static JSIValue CreateAsyKeyDataItem(void)
 {
     JSIValue asyKeyDataItem = JSI::CreateObject();
-    JSI::SetNumberProperty(asyKeyDataItem, "EC_PRIVATE_K", (double)EC_PRIVATE_K);
-    JSI::SetNumberProperty(asyKeyDataItem, "EC_PRIVATE_04_X_Y_K", (double)EC_PRIVATE_04_X_Y_K);
     JSI::SetNumberProperty(asyKeyDataItem, "EC_PUBLIC_X_Y", (double)EC_PUBLIC_X_Y);
     JSI::SetNumberProperty(asyKeyDataItem, "EC_PUBLIC_04_X_Y", (double)EC_PUBLIC_04_X_Y);
     JSI::SetNumberProperty(asyKeyDataItem, "EC_PUBLIC_COMPRESS_X", (double)EC_PUBLIC_COMPRESS_X);

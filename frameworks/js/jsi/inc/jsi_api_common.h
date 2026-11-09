@@ -51,8 +51,6 @@ typedef enum {
 #define ARRAY_INDEX_ONE 1
 #define ARRAY_INDEX_TWO 2
 #define ARRAY_INDEX_THREE 3
-#define EC_PRIVATE_K 6
-#define EC_PRIVATE_04_X_Y_K 7
 #define EC_PUBLIC_X_Y 8
 #define EC_PUBLIC_04_X_Y 9
 #define EC_PUBLIC_COMPRESS_X 10
