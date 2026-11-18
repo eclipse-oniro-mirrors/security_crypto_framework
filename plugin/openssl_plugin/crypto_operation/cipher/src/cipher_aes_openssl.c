@@ -495,6 +495,7 @@ static HcfResult InitCipherDataByMode(HcfCipherAesGeneratorSpiOpensslImpl *ciphe
 static HcfResult InitCipherData(HcfCipherGeneratorSpi *self, enum HcfCryptoMode opMode,
     HcfParamsSpec *params, CipherData **cipherData)
 {
+    FreeCipherData(cipherData);
     HcfResult ret = HCF_ERR_MALLOC;
     *cipherData = (CipherData *)HcfMalloc(sizeof(CipherData), 0);
     if (*cipherData == NULL) {

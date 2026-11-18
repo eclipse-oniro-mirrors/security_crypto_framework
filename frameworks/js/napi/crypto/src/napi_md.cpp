@@ -226,6 +226,10 @@ static bool BuildMdJsUpdateCtx(napi_env env, napi_callback_info info, MdCtx *con
     }
 
     context->md = napiMd->GetMd();
+    if (context->md == nullptr) {
+        LOGE("md is nullptr!");
+        return false;
+    }
 
     if (napi_create_reference(env, thisVar, 1, &context->mdRef) != napi_ok) {
         LOGE("create md ref failed when do md update!");
@@ -262,6 +266,10 @@ static bool BuildMdJsDoFinalCtx(napi_env env, napi_callback_info info, MdCtx *co
     }
 
     context->md = napiMd->GetMd();
+    if (context->md == nullptr) {
+        LOGE("md is nullptr!");
+        return false;
+    }
 
     if (napi_create_reference(env, thisVar, 1, &context->mdRef) != napi_ok) {
         LOGE("create md ref failed when do md final!");
@@ -303,6 +311,10 @@ static HcfResult BuildMdJsSqueezeCtx(napi_env env, napi_callback_info info, MdCt
     }
 
     context->md = napiMd->GetMd();
+    if (context->md == nullptr) {
+        LOGE("md is nullptr!");
+        return HCF_INVALID_PARAMS;
+    }
 
     if (napi_create_reference(env, thisVar, 1, &context->mdRef) != napi_ok) {
         LOGE("create md ref failed when do md squeeze!");

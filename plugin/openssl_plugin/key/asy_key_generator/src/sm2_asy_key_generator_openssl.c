@@ -108,6 +108,7 @@ static HcfResult GenerateSm2KeyWithParamsSpec(const HcfEccCommParamsSpec *ecPara
         LOGD("Generate EC_KEY by curve name");
         if (ecKey == NULL) {
             LOGE("New ec key failed.");
+            HcfPrintOpensslError();
             return HCF_ERR_CRYPTO_OPERATION;
         }
     } else {
@@ -151,6 +152,7 @@ static HcfResult NewSm2KeyPairWithCommSpec(const HcfEccCommParamsSpec *ecParams,
     }
     if (OpensslEcKeyGenerateKey(ecKey) != HCF_OPENSSL_SUCCESS) {
         LOGE("Failed to generate EC key pair.");
+        HcfPrintOpensslError();
         OpensslEcKeyFree(ecKey);
         return HCF_ERR_CRYPTO_OPERATION;
     }

@@ -208,6 +208,7 @@ static HcfResult EccCurveIdGetKeyByteSize(int32_t curveId, size_t *keyBytes)
     EC_KEY *tmpEcKey = OpensslEcKeyNewByCurveName(curveId);
     if (tmpEcKey == NULL) {
         LOGE("Failed to create EC key by curve name.");
+        HcfPrintOpensslError();
         return HCF_ERR_CRYPTO_OPERATION;
     }
     const EC_GROUP *group = OpensslEcKeyGet0Group(tmpEcKey);
@@ -231,6 +232,7 @@ static EC_KEY *EccOct2KeyNew(int32_t curveId, const unsigned char *buf, size_t l
     EC_KEY *ecKey = OpensslEcKeyNewByCurveName(curveId);
     if (ecKey == NULL) {
         LOGE("Failed to create EC key by curve name.");
+        HcfPrintOpensslError();
         return NULL;
     }
     if (EC_KEY_oct2key(ecKey, buf, len, NULL) != HCF_OPENSSL_SUCCESS) {
@@ -411,6 +413,7 @@ static EC_KEY *EccDecodePriScalarKOnly(int32_t curveId, const unsigned char *oct
     EC_KEY *ecKey = OpensslEcKeyNewByCurveName(curveId);
     if (ecKey == NULL) {
         LOGE("Failed to create EC key by curve name.");
+        HcfPrintOpensslError();
         return NULL;
     }
     if (EC_KEY_oct2priv(ecKey, octets, keyBytes) != HCF_OPENSSL_SUCCESS) {
@@ -431,6 +434,7 @@ static EC_KEY *EccDecodePri04XYK(int32_t curveId, const unsigned char *octets, s
     EC_KEY *ecKey = OpensslEcKeyNewByCurveName(curveId);
     if (ecKey == NULL) {
         LOGE("Failed to create EC key by curve name.");
+        HcfPrintOpensslError();
         return NULL;
     }
     if (EC_KEY_oct2key(ecKey, octets, ECC_COORDINATE_COUNT * keyBytes + ECC_OCTET_PREFIX_SIZE, NULL) !=

@@ -716,6 +716,7 @@ static HcfResult GetMlDsaPubKeyFromPriKey(const HcfPriKey *self, HcfPubKey **ret
     HcfFree(bigInteger.data);
     if (evpPubKey == NULL) {
         LOGE("Create ml-dsa pubKey failed.");
+        HcfPrintOpensslError();
         return HCF_ERR_CRYPTO_OPERATION;
     }
     HcfResult ret = CreateMlDsaPubKey(evpPubKey, impl->type, (HcfOpensslMlDsaPubKey **)returnPubKey);
@@ -898,6 +899,8 @@ static HcfResult GenerateMlDsaPubAndPriKey(int32_t bits,
     EVP_PKEY *pkey = NULL;
     HcfResult ret = GenerateMlDsaEvpKey(bits, &pkey);
     if (ret != HCF_SUCCESS) {
+        LOGE("Generate ML-DSA EVP_PKEY failed.");
+        HcfPrintOpensslError();
         return ret;
     }
 
@@ -953,6 +956,7 @@ static EVP_PKEY *MlDsaPkeyFromSeed(int type, const uint8_t *seed, size_t seedLen
     EVP_PKEY_CTX *ctx = OpensslEvpPkeyCtxNewFromName(NULL, g_mlDsaAlgNames[idx], NULL);
     if (ctx == NULL) {
         LOGE("Create evp pkey ctx failed.");
+        HcfPrintOpensslError();
         return NULL;
     }
     EVP_PKEY *pkey = NULL;

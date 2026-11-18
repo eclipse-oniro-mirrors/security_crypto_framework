@@ -94,6 +94,7 @@ static const EVP_CIPHER *GetDesCipherType(HcfCipherDesGeneratorSpiOpensslImpl *i
 
 static HcfResult InitCipherData(enum HcfCryptoMode opMode, CipherData **cipherData)
 {
+    FreeCipherData(cipherData);
     HcfResult ret = HCF_INVALID_PARAMS;
 
     *cipherData = (CipherData *)HcfMalloc(sizeof(CipherData), 0);

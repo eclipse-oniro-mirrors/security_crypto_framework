@@ -124,6 +124,7 @@ HcfResult HcfAsn1ToSm2Spec(HcfBlob *input, Sm2CipherTextSpec **returnSpec)
     struct Sm2CipherTextSt *sm2Text = OpensslD2iSm2CipherText(input->data, input->len);
     if (sm2Text == NULL) {
         LOGE("SM2 openssl [d2i_SM2_Ciphertext] error");
+        HcfPrintOpensslError();
         return HCF_ERR_CRYPTO_OPERATION;
     }
     Sm2CipherTextSpec *tempSpec = (Sm2CipherTextSpec *)(HcfMalloc(sizeof(Sm2CipherTextSpec), 0));
