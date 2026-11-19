@@ -247,6 +247,10 @@ static bool BuildMacJsInitCtx(napi_env env, napi_callback_info info, MacCtx *con
     }
 
     context->mac = napiMac->GetMac();
+    if (context->mac == nullptr) {
+        LOGE("mac is nullptr!");
+        return false;
+    }
 
     if (napi_create_reference(env, thisVar, 1, &context->macRef) != napi_ok) {
         LOGE("create mac ref failed when do mac init!");
@@ -292,6 +296,10 @@ static bool BuildMacJsUpdateCtx(napi_env env, napi_callback_info info, MacCtx *c
     }
 
     context->mac = napiMac->GetMac();
+    if (context->mac == nullptr) {
+        LOGE("mac is nullptr!");
+        return false;
+    }
 
     if (napi_create_reference(env, thisVar, 1, &context->macRef) != napi_ok) {
         LOGE("create mac ref failed when do mac update!");
@@ -327,6 +335,10 @@ static bool BuildMacJsDoFinalCtx(napi_env env, napi_callback_info info, MacCtx *
     }
 
     context->mac = napiMac->GetMac();
+    if (context->mac == nullptr) {
+        LOGE("mac is nullptr!");
+        return false;
+    }
 
     if (napi_create_reference(env, thisVar, 1, &context->macRef) != napi_ok) {
         LOGE("create mac ref failed when do mac final!");

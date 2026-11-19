@@ -140,6 +140,7 @@ static HcfResult InitCipherData(enum HcfCryptoMode opMode, CipherData *cipherDat
         LOGE("cipherData is null.");
         return HCF_ERR_PARAMETER_CHECK_FAILED;
     }
+    ClearCipherData(cipherData);
     cipherData->enc = opMode;
     cipherData->ctx = OpensslEvpCipherCtxNew();
     if (cipherData->ctx == NULL) {

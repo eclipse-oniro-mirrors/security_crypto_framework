@@ -863,6 +863,8 @@ static HcfResult GenerateMlKemPubAndPriKey(int32_t bits,
     EVP_PKEY *pkey = NULL;
     HcfResult ret = GenerateMlKemEvpKey(bits, &pkey);
     if (ret != HCF_SUCCESS) {
+        LOGE("Generate ML-KEM EVP_PKEY failed.");
+        HcfPrintOpensslError();
         return ret;
     }
 
@@ -918,6 +920,7 @@ static EVP_PKEY *MlKemPkeyFromSeed(int type, const uint8_t *seed, size_t seedLen
     EVP_PKEY_CTX *ctx = OpensslEvpPkeyCtxNewFromName(NULL, g_mlKemAlgNames[idx], NULL);
     if (ctx == NULL) {
         LOGE("Create evp pkey ctx failed.");
+        HcfPrintOpensslError();
         return NULL;
     }
     EVP_PKEY *pkey = NULL;
@@ -993,6 +996,7 @@ static HcfResult GetMlKemPubKeyFromPriKey(const HcfPriKey *self, HcfPubKey **ret
     HcfFree(bigInteger.data);
     if (evpPubKey == NULL) {
         LOGE("Create ml-kem pubKey failed.");
+        HcfPrintOpensslError();
         return HCF_ERR_CRYPTO_OPERATION;
     }
     HcfResult ret = CreateMlKemPubKey(evpPubKey, impl->type, (HcfOpensslMlKemPubKey **)returnPubKey);

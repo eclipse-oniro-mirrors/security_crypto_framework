@@ -738,6 +738,7 @@ static HcfResult GenerateDsaPubAndPriKey(int32_t keyLen, HcfOpensslDsaPubKey **r
     HcfResult ret = GenerateDsaEvpKey(keyLen, &pkey);
     if (ret != HCF_SUCCESS) {
         LOGE("Generate DSA EVP_PKEY failed.");
+        HcfPrintOpensslError();
         return ret;
     }
 

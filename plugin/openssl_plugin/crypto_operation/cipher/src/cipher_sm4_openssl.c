@@ -269,6 +269,7 @@ static HcfResult InitAadAndTagFromAeadParams(enum HcfCryptoMode opMode, HcfAeadP
 static HcfResult InitCipherData(HcfCipherGeneratorSpi* self, enum HcfCryptoMode opMode,
     HcfParamsSpec* params, CipherData **cipherData)
 {
+    FreeCipherData(cipherData);
     HcfResult ret = HCF_ERR_MALLOC;
     *cipherData = (CipherData *)HcfMalloc(sizeof(CipherData), 0);
     if (*cipherData == NULL) {
@@ -276,8 +277,6 @@ static HcfResult InitCipherData(HcfCipherGeneratorSpi* self, enum HcfCryptoMode 
         return ret;
     }
     HcfCipherSm4GeneratorSpiOpensslImpl *cipherImpl = (HcfCipherSm4GeneratorSpiOpensslImpl *)self;
-    HcfAlgParaValue mode = cipherImpl->attr.mode;
-
     (*cipherData)->enc = opMode;
     (*cipherData)->ctx = OpensslEvpCipherCtxNew();
     if ((*cipherData)->ctx == NULL) {
@@ -285,9 +284,8 @@ static HcfResult InitCipherData(HcfCipherGeneratorSpi* self, enum HcfCryptoMode 
         LOGE("Failed to allocate ctx memory!");
         goto clearup;
     }
-
     ret = HCF_SUCCESS;
-    switch (mode) {
+    switch (cipherImpl->attr.mode) {
         case HCF_ALG_MODE_CBC:
         case HCF_ALG_MODE_CTR:
         case HCF_ALG_MODE_OFB:

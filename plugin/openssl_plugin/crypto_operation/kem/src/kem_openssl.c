@@ -128,6 +128,7 @@ static HcfResult KemEncapsulate(EVP_PKEY *pubPkey, const HcfBlob *ikme,
     EVP_PKEY_CTX *ctx = OpensslEvpPkeyCtxNewFromPkey(NULL, pubPkey, NULL);
     if (ctx == NULL) {
         LOGE("Failed to create EVP_PKEY_CTX.");
+        HcfPrintOpensslError();
         return HCF_ERR_CRYPTO_OPERATION;
     }
     HcfResult ret = KemEncapsulateInit(ctx, ikme);
@@ -143,6 +144,7 @@ static HcfResult KemDecapsulate(EVP_PKEY *priPkey, const HcfBlob *wrappedKey, Hc
     EVP_PKEY_CTX *ctx = OpensslEvpPkeyCtxNewFromPkey(NULL, priPkey, NULL);
     if (ctx == NULL) {
         LOGE("Failed to create EVP_PKEY_CTX.");
+        HcfPrintOpensslError();
         return HCF_ERR_CRYPTO_OPERATION;
     }
     HcfResult ret = HCF_ERR_CRYPTO_OPERATION;

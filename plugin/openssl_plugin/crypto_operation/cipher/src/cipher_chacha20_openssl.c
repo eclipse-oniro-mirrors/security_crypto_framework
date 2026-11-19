@@ -187,6 +187,7 @@ static HcfResult InitAadAndTagFromAeadParams(enum HcfCryptoMode opMode, HcfAeadP
 static HcfResult InitCipherData(HcfCipherGeneratorSpi *self, enum HcfCryptoMode opMode,
     HcfParamsSpec *params, CipherData **cipherData)
 {
+    FreeCipherData(cipherData);
     HcfResult ret = HCF_ERR_CRYPTO_OPERATION;
     *cipherData = (CipherData *)HcfMalloc(sizeof(CipherData), 0);
     if (*cipherData == NULL) {
