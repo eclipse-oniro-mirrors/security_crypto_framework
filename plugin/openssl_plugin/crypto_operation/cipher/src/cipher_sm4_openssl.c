@@ -40,8 +40,9 @@
 
 typedef struct {
     HcfCipherGeneratorSpi base;
-    CipherAttr attr;
+    HcfCipherAttr attr;
     CipherData *cipherData;
+    CryptoStatus initFlag;
 } HcfCipherSm4GeneratorSpiOpensslImpl;
 
 static const char *GetSm4GeneratorClass(void)
@@ -268,6 +269,7 @@ static HcfResult InitAadAndTagFromAeadParams(enum HcfCryptoMode opMode, HcfAeadP
 static HcfResult InitCipherData(HcfCipherGeneratorSpi* self, enum HcfCryptoMode opMode,
     HcfParamsSpec* params, CipherData **cipherData)
 {
+    FreeCipherData(cipherData);
     HcfResult ret = HCF_ERR_MALLOC;
     *cipherData = (CipherData *)HcfMalloc(sizeof(CipherData), 0);
     if (*cipherData == NULL) {
@@ -275,8 +277,6 @@ static HcfResult InitCipherData(HcfCipherGeneratorSpi* self, enum HcfCryptoMode 
         return ret;
     }
     HcfCipherSm4GeneratorSpiOpensslImpl *cipherImpl = (HcfCipherSm4GeneratorSpiOpensslImpl *)self;
-    HcfAlgParaValue mode = cipherImpl->attr.mode;
-
     (*cipherData)->enc = opMode;
     (*cipherData)->ctx = OpensslEvpCipherCtxNew();
     if ((*cipherData)->ctx == NULL) {
@@ -284,9 +284,8 @@ static HcfResult InitCipherData(HcfCipherGeneratorSpi* self, enum HcfCryptoMode 
         LOGE("Failed to allocate ctx memory!");
         goto clearup;
     }
-
     ret = HCF_SUCCESS;
-    switch (mode) {
+    switch (cipherImpl->attr.mode) {
         case HCF_ALG_MODE_CBC:
         case HCF_ALG_MODE_CTR:
         case HCF_ALG_MODE_OFB:
@@ -370,7 +369,7 @@ static HcfResult CheckParam(HcfCipherGeneratorSpi* self, enum HcfCryptoMode opMo
     return HCF_SUCCESS;
 }
 
-static bool SetCipherAttribute(HcfCipherSm4GeneratorSpiOpensslImpl *cipherImpl, SymKeyImpl *keyImpl,
+static bool SetHcfCipherAttribute(HcfCipherSm4GeneratorSpiOpensslImpl *cipherImpl, SymKeyImpl *keyImpl,
     int enc, HcfParamsSpec *params)
 {
     CipherData *data = cipherImpl->cipherData;
@@ -429,7 +428,7 @@ static HcfResult EngineCipherInit(HcfCipherGeneratorSpi* self, enum HcfCryptoMod
     }
     CipherData *data = cipherImpl->cipherData;
     HcfResult ret = HCF_ERR_CRYPTO_OPERATION;
-    if (!SetCipherAttribute(cipherImpl, keyImpl, enc, params)) {
+    if (!SetHcfCipherAttribute(cipherImpl, keyImpl, enc, params)) {
         LOGE("Set cipher attribute failed!");
         goto clearup;
     }
@@ -438,6 +437,7 @@ static HcfResult EngineCipherInit(HcfCipherGeneratorSpi* self, enum HcfCryptoMod
         LOGE("Set padding failed.");
         goto clearup;
     }
+    cipherImpl->initFlag = INITIALIZED;
     return HCF_SUCCESS;
 clearup:
     FreeCipherData(&(cipherImpl->cipherData));
@@ -448,6 +448,10 @@ static HcfResult AllocateOutput(HcfBlob* input, HcfBlob* output, bool *isUpdateI
 {
     uint32_t outLen = SM4_BLOCK_SIZE + SM4_BLOCK_SIZE;
     if (HcfIsBlobValid(input)) {
+        if (outLen > UINT32_MAX - input->len) {
+            LOGE("Input length overflow.");
+            return HCF_ERR_PARAMETER_CHECK_FAILED;
+        }
         outLen += input->len;
         *isUpdateInput = true;
     }
@@ -501,9 +505,15 @@ static HcfResult EngineUpdate(HcfCipherGeneratorSpi *self, HcfBlob *input, HcfBl
     }
 
     HcfCipherSm4GeneratorSpiOpensslImpl *cipherImpl = (HcfCipherSm4GeneratorSpiOpensslImpl *)self;
+    if (cipherImpl->initFlag != INITIALIZED) {
+        LOGW("Cipher instance may not have been initialized, "
+            "ensure init interface of Cipher instance is executed completely!");
+    }
+
     CipherData *data = cipherImpl->cipherData;
     if (data == NULL) {
-        LOGE("cipherData is null!");
+        LOGE("The data of Cipher instance is NULL, "
+            "please check if init interface of Cipher instance is executed completely!");
         return HCF_INVALID_PARAMS;
     }
     bool isUpdateInput = false;
@@ -727,9 +737,15 @@ static HcfResult EngineDoFinal(HcfCipherGeneratorSpi* self, HcfBlob* input, HcfB
 
     HcfResult ret = HCF_ERR_CRYPTO_OPERATION;
     HcfCipherSm4GeneratorSpiOpensslImpl *cipherImpl = (HcfCipherSm4GeneratorSpiOpensslImpl *)self;
+    if (cipherImpl->initFlag != INITIALIZED) {
+        LOGW("Cipher instance may not have been initialized, "
+            "ensure init interface of Cipher instance is executed completely!");
+    }
+
     CipherData *data = cipherImpl->cipherData;
     if (data == NULL) {
-        LOGE("cipherData is null!");
+        LOGE("The data of Cipher instance is NULL, "
+            "please check if init interface of Cipher instance is executed completely!");
         return HCF_INVALID_PARAMS;
     }
 
@@ -787,7 +803,7 @@ static HcfResult SetSm4CipherSpecUint8Array(HcfCipherGeneratorSpi *self, CipherS
     return HCF_NOT_SUPPORT;
 }
 
-HcfResult HcfCipherSm4GeneratorSpiCreate(CipherAttr *attr, HcfCipherGeneratorSpi **generator)
+HcfResult HcfCipherSm4GeneratorSpiCreate(HcfCipherAttr *attr, HcfCipherGeneratorSpi **generator)
 {
     if (attr == NULL || generator == NULL) {
         LOGE("Invalid input parameter.");
@@ -799,7 +815,7 @@ HcfResult HcfCipherSm4GeneratorSpiCreate(CipherAttr *attr, HcfCipherGeneratorSpi
         LOGE("Failed to allocate returnImpl memroy!");
         return HCF_ERR_MALLOC;
     }
-    (void)memcpy_s(&returnImpl->attr, sizeof(CipherAttr), attr, sizeof(CipherAttr));
+    (void)memcpy_s(&returnImpl->attr, sizeof(HcfCipherAttr), attr, sizeof(HcfCipherAttr));
     returnImpl->base.init = EngineCipherInit;
     returnImpl->base.update = EngineUpdate;
     returnImpl->base.doFinal = EngineDoFinal;

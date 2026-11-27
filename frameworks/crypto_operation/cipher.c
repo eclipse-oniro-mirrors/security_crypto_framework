@@ -14,23 +14,31 @@
  */
 
 #include "cipher.h"
+#ifdef CRYPTO_MBEDTLS
+#include "mbedtls_cipher.h"
+#else
 #include "aes_openssl.h"
 #include "des_openssl.h"
+#include "cipher_rsa_openssl.h"
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
+#include "cipher_sm2_openssl.h"
+#endif
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
+#include "sm4_openssl.h"
+#endif
+#include "chacha20_openssl.h"
+#include "cipher_openssl.h"
+#include "plugin_operation_err.h"
+#endif
 #include "config.h"
 #include "securec.h"
 #include "result.h"
 #include "string.h"
 #include "log.h"
 #include "memory.h"
-#include "cipher_rsa_openssl.h"
-#include "cipher_sm2_openssl.h"
-#include "sm4_openssl.h"
-#include "chacha20_openssl.h"
-#include "cipher_openssl.h"
 #include "utils.h"
-#include "plugin_operation_err.h"
 
-typedef HcfResult (*HcfCipherGeneratorSpiCreateFunc)(CipherAttr *, HcfCipherGeneratorSpi **);
+typedef HcfResult (*HcfCipherGeneratorSpiCreateFunc)(HcfCipherAttr *, HcfCipherGeneratorSpi **);
 
 typedef struct {
     HcfCipher super;
@@ -48,12 +56,19 @@ typedef struct {
 } HcfCipherGenAbility;
 
 static const HcfCipherGenAbility CIPHER_ABILITY_SET[] = {
+#ifdef CRYPTO_MBEDTLS
+    { HCF_ALG_AES, { MbedtlsAesCipherSpiCreate } },
+#else
     { HCF_ALG_RSA, { HcfCipherRsaCipherSpiCreate } },
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
     { HCF_ALG_SM2, { HcfCipherSm2CipherSpiCreate } },
+#endif
     { HCF_ALG_AES, { HcfCipherAesGeneratorSpiCreate } },
     { HCF_ALG_3DES, { HcfCipherDesGeneratorSpiCreate } },
     { HCF_ALG_DES, { HcfCipherDesGeneratorSpiCreate } },
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
     { HCF_ALG_SM4, { HcfCipherSm4GeneratorSpiCreate } },
+#endif
     { HCF_ALG_AES_WRAP, { HcfCipherAesGeneratorSpiCreate } },
     { HCF_ALG_CHACHA20, { HcfCipherChaCha20GeneratorSpiCreate } },
     { HCF_ALG_CHACHA20_POLY1305, { HcfCipherChaCha20GeneratorSpiCreate } },
@@ -61,11 +76,12 @@ static const HcfCipherGenAbility CIPHER_ABILITY_SET[] = {
     { HCF_ALG_RC4, { HcfCipherSymAlgorithmGeneratorSpiCreate } },
     { HCF_ALG_BLOWFISH, { HcfCipherSymAlgorithmGeneratorSpiCreate } },
     { HCF_ALG_CAST, { HcfCipherSymAlgorithmGeneratorSpiCreate } }
+#endif
 };
 
 static void SetKeyType(HcfAlgParaValue value, void *cipher)
 {
-    CipherAttr *cipherAttr = (CipherAttr *)cipher;
+    HcfCipherAttr *cipherAttr = (HcfCipherAttr *)cipher;
 
     cipherAttr->keySize = 0;
 
@@ -73,9 +89,11 @@ static void SetKeyType(HcfAlgParaValue value, void *cipher)
         case HCF_ALG_AES_DEFAULT:
             cipherAttr->algo = HCF_ALG_AES;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
         case HCF_ALG_SM4_DEFAULT:
             cipherAttr->algo = HCF_ALG_SM4;
             break;
+#endif
         case HCF_ALG_DES_DEFAULT:
             cipherAttr->algo = HCF_ALG_DES;
             break;
@@ -85,9 +103,11 @@ static void SetKeyType(HcfAlgParaValue value, void *cipher)
         case HCF_ALG_RSA_DEFAULT:
             cipherAttr->algo = HCF_ALG_RSA;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
         case HCF_ALG_SM2_DEFAULT:
             cipherAttr->algo = HCF_ALG_SM2;
             break;
+#endif
         case HCF_ALG_AES_WRAP_DEFAULT:
             cipherAttr->algo = HCF_ALG_AES_WRAP;
             break;
@@ -114,7 +134,7 @@ static void SetKeyType(HcfAlgParaValue value, void *cipher)
 
 static void SetKeyLength(HcfAlgParaValue value, void *cipher)
 {
-    CipherAttr *cipherAttr = (CipherAttr *)cipher;
+    HcfCipherAttr *cipherAttr = (HcfCipherAttr *)cipher;
 
     cipherAttr->keySize = value;
 
@@ -129,9 +149,11 @@ static void SetKeyLength(HcfAlgParaValue value, void *cipher)
         case HCF_ALG_AES_256_WRAP:
             cipherAttr->algo = HCF_ALG_AES_WRAP;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
         case HCF_ALG_SM4_128:
             cipherAttr->algo = HCF_ALG_SM4;
             break;
+#endif
         case HCF_ALG_3DES_192:
             cipherAttr->algo = HCF_ALG_3DES;
             break;
@@ -147,9 +169,11 @@ static void SetKeyLength(HcfAlgParaValue value, void *cipher)
         case HCF_OPENSSL_RSA_8192:
             cipherAttr->algo = HCF_ALG_RSA;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
         case HCF_ALG_SM2_256:
             cipherAttr->algo = HCF_ALG_SM2;
             break;
+#endif
         case HCF_ALG_CHACHA20_256:
             cipherAttr->algo = HCF_ALG_CHACHA20;
             break;
@@ -161,22 +185,22 @@ static void SetKeyLength(HcfAlgParaValue value, void *cipher)
 
 static void SetMode(HcfAlgParaValue value, void *cipher)
 {
-    CipherAttr *cipherAttr = (CipherAttr *)cipher;
+    HcfCipherAttr *cipherAttr = (HcfCipherAttr *)cipher;
     cipherAttr->mode = value ;
 }
 
 static void SetPadding(HcfAlgParaValue value, void *cipher)
 {
-    CipherAttr *cipherAttr = (CipherAttr *)cipher;
+    HcfCipherAttr *cipherAttr = (HcfCipherAttr *)cipher;
     cipherAttr->paddingMode = value;
 }
 
-static void SetDigest(HcfAlgParaValue value, CipherAttr *cipher)
+static void SetDigest(HcfAlgParaValue value, HcfCipherAttr *cipher)
 {
     cipher->md = value;
 }
 
-static void SetMgf1Digest(HcfAlgParaValue value, CipherAttr *cipher)
+static void SetMgf1Digest(HcfAlgParaValue value, HcfCipherAttr *cipher)
 {
     cipher->mgf1md = value;
 }
@@ -188,7 +212,6 @@ static HcfResult OnSetParameter(const HcfParaConfig *config, void *cipher)
         return HCF_INVALID_PARAMS;
     }
     HcfResult ret = HCF_SUCCESS;
-    LOGD("Set Parameter:%{public}s", config->tag);
     switch (config->paraType) {
         case HCF_ALG_TYPE:
             SetKeyType(config->paraValue, cipher);
@@ -246,7 +269,7 @@ static void CipherDestroy(HcfObjectBase *self)
         return;
     }
     if (!HcfIsClassMatch(self, GetCipherGeneratorClass())) {
-        LOGE("Class not match.");
+        LOGE("Class is not match.");
         return;
     }
     CipherGenImpl *impl = (CipherGenImpl *)self;
@@ -268,7 +291,7 @@ static HcfResult SetCipherSpecUint8Array(HcfCipher *self, CipherSpecItem item, H
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetCipherGeneratorClass())) {
-        LOGE("Class not match.");
+        LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
     CipherGenImpl *impl = (CipherGenImpl *)self;
@@ -278,7 +301,11 @@ static HcfResult SetCipherSpecUint8Array(HcfCipher *self, CipherSpecItem item, H
 static bool CheckCipherSpecString(CipherSpecItem item)
 {
     return ((item == OAEP_MD_NAME_STR) || (item == OAEP_MGF_NAME_STR) ||
-        (item == OAEP_MGF1_MD_STR) || (item == SM2_MD_NAME_STR));
+        (item == OAEP_MGF1_MD_STR)
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM2_ENC
+        || (item == SM2_MD_NAME_STR)
+#endif
+        );
 }
 
 static HcfResult GetCipherSpecString(HcfCipher *self, CipherSpecItem item, char **returnString)
@@ -292,7 +319,7 @@ static HcfResult GetCipherSpecString(HcfCipher *self, CipherSpecItem item, char 
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetCipherGeneratorClass())) {
-        LOGE("Class not match.");
+        LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
     CipherGenImpl *impl = (CipherGenImpl *)self;
@@ -310,7 +337,7 @@ static HcfResult GetCipherSpecUint8Array(HcfCipher *self, CipherSpecItem item, H
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetCipherGeneratorClass())) {
-        LOGE("Class not match.");
+        LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
     CipherGenImpl *impl = (CipherGenImpl *)self;
@@ -328,7 +355,10 @@ static HcfResult CipherInit(HcfCipher *self, enum HcfCryptoMode opMode,
         LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
+
+#ifndef CRYPTO_MBEDTLS
     HcfClearPluginErrorMessage();
+#endif
     CipherGenImpl *impl = (CipherGenImpl *)self;
     return impl->spiObj->init(impl->spiObj, opMode, key, params);
 }
@@ -343,7 +373,10 @@ static HcfResult CipherUpdate(HcfCipher *self, HcfBlob *input, HcfBlob *output)
         LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
+
+#ifndef CRYPTO_MBEDTLS
     HcfClearPluginErrorMessage();
+#endif
     CipherGenImpl *impl = (CipherGenImpl *)self;
     return impl->spiObj->update(impl->spiObj, input, output);
 }
@@ -351,14 +384,17 @@ static HcfResult CipherUpdate(HcfCipher *self, HcfBlob *input, HcfBlob *output)
 static HcfResult CipherFinal(HcfCipher *self, HcfBlob *input, HcfBlob *output)
 {
     if ((self == NULL) || (output == NULL)) {
-        LOGE("Invalid input parameter!");
+        LOGE("Invalid input parameter.");
         return HCF_INVALID_PARAMS;
     }
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetCipherGeneratorClass())) {
         LOGE("Class is not match.");
         return HCF_INVALID_PARAMS;
     }
+
+#ifndef CRYPTO_MBEDTLS
     HcfClearPluginErrorMessage();
+#endif
     CipherGenImpl *impl = (CipherGenImpl *)self;
     return impl->spiObj->doFinal(impl->spiObj, input, output);
 }
@@ -376,7 +412,7 @@ static void InitCipher(HcfCipherGeneratorSpi *spiObj, CipherGenImpl *cipher)
     cipher->super.setCipherSpecUint8Array = SetCipherSpecUint8Array;
 }
 
-static const HcfCipherGenFuncSet *FindAbility(CipherAttr *attr)
+static const HcfCipherGenFuncSet *FindAbility(HcfCipherAttr *attr)
 {
     if (attr == NULL) {
         LOGE("Attr is null");
@@ -393,13 +429,13 @@ static const HcfCipherGenFuncSet *FindAbility(CipherAttr *attr)
 
 HcfResult HcfCipherCreate(const char *transformation, HcfCipher **returnObj)
 {
-    CipherAttr attr = {0};
+    HcfCipherAttr attr = {0};
     if (!HcfIsStrValid(transformation, HCF_MAX_ALGO_NAME_LEN) || (returnObj == NULL)) {
         LOGE("Invalid input params while creating cipher!");
         return HCF_INVALID_PARAMS;
     }
-    if (ParseAndSetParameter(transformation, (void *)&attr, OnSetParameter) != HCF_SUCCESS) {
-        LOGE("ParseAndSetParameter failed!");
+    if (HcfParseAndSetParameter(transformation, (void *)&attr, OnSetParameter) != HCF_SUCCESS) {
+        LOGE("HcfParseAndSetParameter failed!");
         return HCF_NOT_SUPPORT;
     }
 

@@ -277,6 +277,7 @@ HWTEST_F(CryptoEccKeyUtilTest, CryptoEccKeyUtilTest001_18, TestSize.Level0)
     HcfFree(returnCommonParamSpec);
 }
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
 HWTEST_F(CryptoEccKeyUtilTest, CryptoEccKeyUtilTest001_19, TestSize.Level0)
 {
     HcfEccCommParamsSpec *returnCommonParamSpec = nullptr;
@@ -287,6 +288,7 @@ HWTEST_F(CryptoEccKeyUtilTest, CryptoEccKeyUtilTest001_19, TestSize.Level0)
     FreeEccCommParamsSpec(returnCommonParamSpec);
     HcfFree(returnCommonParamSpec);
 }
+#endif
 
 HWTEST_F(CryptoEccKeyUtilTest, CryptoEccKeyUtilTest002, TestSize.Level0)
 {

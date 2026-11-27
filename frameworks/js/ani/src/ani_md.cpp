@@ -28,17 +28,18 @@ MdImpl::~MdImpl()
 
 void MdImpl::UpdateSync(DataBlob const& input)
 {
-    HistogramScopeGuard guard(API_MD_UPDATE_SYNC);
     if (this->md_ == nullptr) {
-        guard.SetErrorCode(HCF_ERR_ANI);
         ANI_LOGE_THROW(HCF_ERR_ANI, "md obj is nullptr!");
         return;
     }
     HcfBlob inBlob = {};
     ArrayU8ToDataBlob(input.data, inBlob);
+    if (this->md_->isXof(this->md_) && this->md_->isSqueezed(this->md_)) {
+        ANI_LOGE_THROW(HCF_ERR_INVALID_CALL, "md has been squeezed, update is not allowed.");
+        return;
+    }
     HcfResult res = this->md_->update(this->md_, &inBlob);
     if (res != HCF_SUCCESS) {
-        guard.SetErrorCode(res);
         ANI_LOGE_THROW(res, "md update failed!");
         return;
     }
@@ -46,17 +47,32 @@ void MdImpl::UpdateSync(DataBlob const& input)
 
 DataBlob MdImpl::DigestSync()
 {
-    HistogramScopeGuard guard(API_MD_DIGEST_SYNC);
     if (this->md_ == nullptr) {
-        guard.SetErrorCode(HCF_ERR_ANI);
         ANI_LOGE_THROW(HCF_ERR_ANI, "md obj is nullptr!");
         return {};
     }
     HcfBlob outBlob = {};
     HcfResult res = this->md_->doFinal(this->md_, &outBlob);
     if (res != HCF_SUCCESS) {
-        guard.SetErrorCode(res);
         ANI_LOGE_THROW(res, "md doFinal failed!");
+        return {};
+    }
+    array<uint8_t> data = {};
+    DataBlobToArrayU8(outBlob, data);
+    HcfBlobDataClearAndFree(&outBlob);
+    return { data };
+}
+
+DataBlob MdImpl::SqueezeSync(int32_t length)
+{
+    if (this->md_ == nullptr) {
+        ANI_LOGE_THROW(HCF_ERR_ANI, "md obj is nullptr!");
+        return {};
+    }
+    HcfBlob outBlob = {};
+    HcfResult res = this->md_->squeeze(this->md_, length, &outBlob);
+    if (res != HCF_SUCCESS) {
+        ANI_LOGE_THROW(res, "md squeeze failed!");
         return {};
     }
     array<uint8_t> data = {};
@@ -67,10 +83,12 @@ DataBlob MdImpl::DigestSync()
 
 int32_t MdImpl::GetMdLength()
 {
-    HistogramScopeGuard guard(API_MD_GET_MD_LENGTH);
     if (this->md_ == nullptr) {
-        guard.SetErrorCode(HCF_ERR_ANI);
         ANI_LOGE_THROW(HCF_ERR_ANI, "md obj is nullptr!");
+        return 0;
+    }
+    if (this->md_->isXof(this->md_)) {
+        ANI_LOGE_THROW(HCF_ERR_INVALID_CALL, "XOF algorithm does not support getMdLength.");
         return 0;
     }
     uint32_t length = this->md_->getMdLength(this->md_);
@@ -89,11 +107,9 @@ string MdImpl::GetAlgName()
 
 Md CreateMd(string_view algName)
 {
-    HistogramScopeGuard guard(API_CREATE_MD);
     HcfMd *md = nullptr;
     HcfResult res = HcfMdCreate(algName.c_str(), &md);
     if (res != HCF_SUCCESS) {
-        guard.SetErrorCode(res);
         ANI_LOGE_THROW(res, "create md obj failed.");
         return make_holder<MdImpl, Md>();
     }

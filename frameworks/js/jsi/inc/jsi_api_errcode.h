@@ -18,12 +18,14 @@
 
 #include "jsi/jsi.h"
 #include "jsi/jsi_types.h"
+#include "result.h"
 
 namespace OHOS {
 namespace ACELite {
 
 void CallbackErrorCodeOrDataResult(const JSIValue thisVal, const JSIValue args, int32_t errCode, const JSIValue data);
 JSIValue ThrowErrorCodeResult(int32_t errorCode);
+uint32_t GetJsiErrValueByErrCode(HcfResult errCode);
 
 }  // namespace ACELite
 }  // namespace OHOS

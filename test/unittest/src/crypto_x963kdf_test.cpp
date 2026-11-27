@@ -327,6 +327,7 @@ HWTEST_F(CryptoX963KdfTest, CryptoX963KdfTestError10, TestSize.Level1)
     HcfObjDestroy(generator);
 }
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
 HWTEST_F(CryptoX963KdfTest, CryptoX963KdfTestError11, TestSize.Level1)
 {
     HcfKdf *generator = nullptr;
@@ -334,6 +335,7 @@ HWTEST_F(CryptoX963KdfTest, CryptoX963KdfTestError11, TestSize.Level1)
     EXPECT_NE(ret, HCF_SUCCESS);
     HcfObjDestroy(generator);
 }
+#endif
 
 HWTEST_F(CryptoX963KdfTest, CryptoX963KdfTestError12, TestSize.Level1)
 {

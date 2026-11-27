@@ -50,8 +50,9 @@
 
 typedef struct {
     HcfCipherGeneratorSpi base;
-    CipherAttr attr;
+    HcfCipherAttr attr;
     CipherData *cipherData;
+    CryptoStatus initFlag;
 } HcfCipherAesGeneratorSpiOpensslImpl;
 
 static const char *GetAesGeneratorClass(void)
@@ -494,6 +495,7 @@ static HcfResult InitCipherDataByMode(HcfCipherAesGeneratorSpiOpensslImpl *ciphe
 static HcfResult InitCipherData(HcfCipherGeneratorSpi *self, enum HcfCryptoMode opMode,
     HcfParamsSpec *params, CipherData **cipherData)
 {
+    FreeCipherData(cipherData);
     HcfResult ret = HCF_ERR_MALLOC;
     *cipherData = (CipherData *)HcfMalloc(sizeof(CipherData), 0);
     if (*cipherData == NULL) {
@@ -521,7 +523,7 @@ clearup:
     return ret;
 }
 
-static bool SetCipherAttribute(HcfCipherAesGeneratorSpiOpensslImpl *cipherImpl, SymKeyImpl *keyImpl,
+static bool SetHcfCipherAttribute(HcfCipherAesGeneratorSpiOpensslImpl *cipherImpl, SymKeyImpl *keyImpl,
     int enc, HcfParamsSpec *params)
 {
     CipherData *data = cipherImpl->cipherData;
@@ -581,7 +583,7 @@ static HcfResult ConfigureCipherCtx(HcfCipherAesGeneratorSpiOpensslImpl *cipherI
     CipherData *data = cipherImpl->cipherData;
     HcfResult ret = HCF_ERR_CRYPTO_OPERATION;
 
-    if (!SetCipherAttribute(cipherImpl, keyImpl, enc, params)) {
+    if (!SetHcfCipherAttribute(cipherImpl, keyImpl, enc, params)) {
         LOGE("Set cipher attribute failed!");
         FreeCipherData(&(cipherImpl->cipherData));
         return ret;
@@ -595,7 +597,7 @@ static HcfResult ConfigureCipherCtx(HcfCipherAesGeneratorSpiOpensslImpl *cipherI
         return ret;
     }
 
-    /* CCM (AeadParamsSpec) encrypt tag length already set in SetCipherAttribute before key/iv Init */
+    /* CCM (AeadParamsSpec) encrypt tag length already set in SetHcfCipherAttribute before key/iv Init */
     if (opMode == ENCRYPT_MODE || cipherImpl->attr.mode != HCF_ALG_MODE_CCM) {
         return HCF_SUCCESS;
     }
@@ -649,7 +651,11 @@ static HcfResult EngineCipherInit(HcfCipherGeneratorSpi *self, enum HcfCryptoMod
         return HCF_INVALID_PARAMS;
     }
 
-    return ConfigureCipherCtx(cipherImpl, keyImpl, enc, opMode, params);
+    ret = ConfigureCipherCtx(cipherImpl, keyImpl, enc, opMode, params);
+    if (ret == HCF_SUCCESS) {
+        cipherImpl->initFlag = INITIALIZED;
+    }
+    return ret;
 }
 
 static HcfResult CommonUpdate(CipherData *data, HcfBlob *input, HcfBlob *output)
@@ -704,6 +710,10 @@ static HcfResult AllocateOutput(HcfBlob *input, HcfBlob *output, bool *isUpdateI
 {
     uint32_t outLen = AES_BLOCK_SIZE + AES_BLOCK_SIZE;
     if (HcfIsBlobValid(input)) {
+        if (outLen > UINT32_MAX - input->len) {
+            LOGE("Input length overflow.");
+            return HCF_ERR_PARAMETER_CHECK_FAILED;
+        }
         outLen += input->len;
         *isUpdateInput = true;
     }
@@ -716,13 +726,8 @@ static HcfResult AllocateOutput(HcfBlob *input, HcfBlob *output, bool *isUpdateI
     return HCF_SUCCESS;
 }
 
-static HcfResult CheckAesWrapCipherName(CipherData *data)
+static HcfResult CheckAesWrapCipherName(const EVP_CIPHER *cipher)
 {
-    const EVP_CIPHER *cipher = EVP_CIPHER_CTX_cipher(data->ctx);
-    if (cipher == NULL) {
-        LOGE("EVP_CIPHER_CTX_cipher is null!");
-        return HCF_ERR_CRYPTO_OPERATION;
-    }
     int nid = EVP_CIPHER_nid(cipher);
     if (nid == NID_undef) {
         LOGE("EVP_CIPHER_nid is undefined!");
@@ -773,24 +778,46 @@ static HcfResult EngineUpdateAead(HcfCipherAesGeneratorSpiOpensslImpl *cipherImp
     return AeadUpdate(data, cipherImpl->attr.mode, &cipherInput, output);
 }
 
-static HcfResult EngineUpdate(HcfCipherGeneratorSpi *self, HcfBlob *input, HcfBlob *output)
+static HcfCipherAesGeneratorSpiOpensslImpl *GetAesCipherImplForUpdate(HcfCipherGeneratorSpi *self,
+    HcfBlob *input, HcfBlob *output)
 {
     if ((self == NULL) || (input == NULL) || (output == NULL)) {
         LOGE("Invalid input parameter!");
-        return HCF_INVALID_PARAMS;
+        return NULL;
     }
     if (!HcfIsClassMatch((const HcfObjectBase *)self, GetAesGeneratorClass())) {
         LOGE("Class is not match.");
+        return NULL;
+    }
+    HcfCipherAesGeneratorSpiOpensslImpl *cipherImpl = (HcfCipherAesGeneratorSpiOpensslImpl *)self;
+    if (cipherImpl->initFlag != INITIALIZED) {
+        LOGW("Cipher instance may not have been initialized, "
+            "ensure init interface of Cipher instance is executed completely!");
+    }
+    return cipherImpl;
+}
+
+static HcfResult EngineUpdate(HcfCipherGeneratorSpi *self, HcfBlob *input, HcfBlob *output)
+{
+    HcfCipherAesGeneratorSpiOpensslImpl *cipherImpl = GetAesCipherImplForUpdate(self, input, output);
+    if (cipherImpl == NULL) {
         return HCF_INVALID_PARAMS;
     }
 
-    HcfCipherAesGeneratorSpiOpensslImpl *cipherImpl = (HcfCipherAesGeneratorSpiOpensslImpl *)self;
     CipherData *data = cipherImpl->cipherData;
     if (data == NULL) {
-        LOGE("cipherData is null!");
+        LOGE("The data of Cipher instance is NULL, "
+            "please check if init interface of Cipher instance is executed completely!");
         return HCF_INVALID_PARAMS;
     }
-    HcfResult ret = CheckAesWrapCipherName(data);
+
+    const EVP_CIPHER *cipher = EVP_CIPHER_CTX_get0_cipher(data->ctx);
+    if (cipher == NULL) {
+        LOGE("The algorithm of Cipher instance is NULL, "
+            "please check if init interface of Cipher instance is executed completely!");
+        return HCF_ERR_CRYPTO_OPERATION;
+    }
+    HcfResult ret = CheckAesWrapCipherName(cipher);
     if (ret != HCF_SUCCESS) {
         LOGE("aes wrap not support update!");
         return ret;
@@ -1174,10 +1201,16 @@ static HcfResult EngineDoFinal(HcfCipherGeneratorSpi *self, HcfBlob *input, HcfB
     }
     HcfResult ret = HCF_ERR_CRYPTO_OPERATION;
     HcfCipherAesGeneratorSpiOpensslImpl *cipherImpl = (HcfCipherAesGeneratorSpiOpensslImpl *)self;
+    if (cipherImpl->initFlag != INITIALIZED) {
+        LOGW("Cipher instance may not have been initialized, "
+            "ensure init interface of Cipher instance is executed completely!");
+    }
+
     CipherData *data = cipherImpl->cipherData;
     HcfAlgParaValue mode = cipherImpl->attr.mode;
     if (data == NULL) {
-        LOGE("cipherData is null!");
+        LOGE("The data of Cipher instance is NULL, "
+            "please check if init interface of Cipher instance is executed completely!");
         return HCF_INVALID_PARAMS;
     }
 
@@ -1240,7 +1273,7 @@ static HcfResult SetAesCipherSpecUint8Array(HcfCipherGeneratorSpi *self, CipherS
     return HCF_NOT_SUPPORT;
 }
 
-HcfResult HcfCipherAesGeneratorSpiCreate(CipherAttr *attr, HcfCipherGeneratorSpi **generator)
+HcfResult HcfCipherAesGeneratorSpiCreate(HcfCipherAttr *attr, HcfCipherGeneratorSpi **generator)
 {
     if ((attr == NULL) || (generator == NULL)) {
         LOGE("Invalid input parameter.");
@@ -1252,7 +1285,7 @@ HcfResult HcfCipherAesGeneratorSpiCreate(CipherAttr *attr, HcfCipherGeneratorSpi
         LOGE("Failed to allocate returnImpl memroy!");
         return HCF_ERR_MALLOC;
     }
-    (void)memcpy_s(&returnImpl->attr, sizeof(CipherAttr), attr, sizeof(CipherAttr));
+    (void)memcpy_s(&returnImpl->attr, sizeof(HcfCipherAttr), attr, sizeof(HcfCipherAttr));
     returnImpl->base.init = EngineCipherInit;
     returnImpl->base.update = EngineUpdate;
     returnImpl->base.doFinal = EngineDoFinal;

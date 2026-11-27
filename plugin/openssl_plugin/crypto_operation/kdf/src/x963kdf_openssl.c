@@ -220,6 +220,7 @@ static HcfResult OpensslX963KDF(OpensslX963KDFSpiImpl *self, HcfBlob *output)
 
     kdf = OpensslEvpKdfFetch(NULL, "X963KDF", NULL);
     if (kdf == NULL) {
+        HcfPrintOpensslError();
         LOGE("kdf fetch failed");
         return HCF_ERR_CRYPTO_OPERATION;
     }
@@ -227,6 +228,7 @@ static HcfResult OpensslX963KDF(OpensslX963KDFSpiImpl *self, HcfBlob *output)
     kctx = OpensslEvpKdfCtxNew(kdf);
     OpensslEvpKdfFree(kdf);
     if (kctx == NULL) {
+        HcfPrintOpensslError();
         LOGE("kdf ctx new failed");
         return HCF_ERR_CRYPTO_OPERATION;
     }

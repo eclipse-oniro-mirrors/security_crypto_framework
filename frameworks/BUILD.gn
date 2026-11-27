@@ -35,6 +35,8 @@ if (os_level == "standard") {
 
     sources = framework_files
 
+    version_script = "framework_lib.map"
+
     if (os_level == "standard") {
       sanitize = {
         cfi = true
@@ -59,6 +61,13 @@ if (os_level == "standard") {
       "c_utils:utils",
       "hilog:libhilog",
     ]
+
+    defines = []
+    if (openssl_api_metrics_enable) {
+      external_deps += [ "api_metrics:histogrammanager" ]
+      defines += [ "OPENSSL_API_METRICS_ENABLE" ]
+    }
+    defines += crypto_sm_defines
   }
 } else if (os_level == "mini") {
   ohos_static_library("crypto_framework_lib") {
@@ -81,11 +90,12 @@ if (os_level == "standard") {
 
     configs = [ "${product_path}:product_public_configs" ]
 
-    cflags = [
-      "--diag_suppress",
-      "Pe188,Pe186",
-    ]
-
+    if (board_toolchain_type == "iccarm") {
+        cflags = [
+        "--diag_suppress",
+        "Pe188,Pe186",
+      ]
+    }
     external_deps = [ "hilog_lite:hilog_lite" ]
   }
 }

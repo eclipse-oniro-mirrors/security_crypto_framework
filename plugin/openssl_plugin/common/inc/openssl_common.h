@@ -65,7 +65,9 @@ HcfResult GetRsaSpecStringMd(const HcfAlgParaValue md, char **returnString);
 
 HcfResult GetRsaSpecStringMGF(char **returnString);
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
 HcfResult GetSm2SpecStringSm3(char **returnString);
+#endif
 
 HcfResult KeyDerive(EVP_PKEY *priKey, EVP_PKEY *pubKey, HcfBlob *returnSecret);
 

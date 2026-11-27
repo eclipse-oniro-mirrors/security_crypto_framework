@@ -51,7 +51,9 @@ static const std::vector<std::string> g_asyKeyAlgoParams = {
     "ECC256",
     "ECC384",
     "ECC521",
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     "SM2_256",
+#endif
     "DSA1024",
     "DSA2048",
     "DH_modp2048",
@@ -121,13 +123,17 @@ static const std::vector<std::string> g_symKeyAlgoParams = {
     "AES128",
     "AES192",
     "AES256",
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
     "SM4_128",
+#endif
     "3DES",
     "DES",
     "HMAC|SHA256",
     "HMAC|SHA384",
     "HMAC|SHA512",
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
     "HMAC|SM3",
+#endif
     "ChaCha20",
 };
 
@@ -316,6 +322,7 @@ HWTEST_F(CryptoGetKeySizeAsyTest, GetKeySizeDhExceptionBranches, TestSize.Level1
     HcfObjDestroy(dhGen);
 }
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
 HWTEST_F(CryptoGetKeySizeAsyTest, GetKeySizeSm2ExceptionBranches, TestSize.Level1)
 {
     HcfAsyKeyGenerator *sm2Gen = nullptr;
@@ -362,6 +369,7 @@ HWTEST_F(CryptoGetKeySizeAsyTest, GetKeySizeSm2ExceptionBranches, TestSize.Level
     HcfObjDestroy(sm2Pair);
     HcfObjDestroy(sm2Gen);
 }
+#endif
 
 HWTEST_F(CryptoGetKeySizeAsyTest, GetKeySizeEccExceptionBranches, TestSize.Level1)
 {

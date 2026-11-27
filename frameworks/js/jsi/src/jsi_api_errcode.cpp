@@ -23,6 +23,7 @@ constexpr uint32_t JSI_ERR_CODE_DEFAULT_ERR = 0;
 constexpr uint32_t JSI_ERR_CODE_OUT_OF_MEMORY = 17620001;
 constexpr uint32_t JSI_ERR_CODE_RUNTIME_ERROR = 17620002;
 constexpr uint32_t JSI_ERR_CODE_CRYPTO_OPERATION = 17630001;
+constexpr uint32_t JSI_ERR_CODE_INVALID_CALL = 17620004;
 
 typedef struct {
     uint32_t errorCode;
@@ -37,9 +38,10 @@ static JsiErrMsg g_errMsg[] = {
     { JSI_ERR_CODE_OUT_OF_MEMORY, "memory error." },
     { JSI_ERR_CODE_RUNTIME_ERROR, "runtime error." },
     { JSI_ERR_CODE_CRYPTO_OPERATION, "crypto operation error." },
+    { JSI_ERR_CODE_INVALID_CALL, "Invalid function call"},
 };
 
-static uint32_t GetJsiErrValueByErrCode(HcfResult errCode)
+uint32_t GetJsiErrValueByErrCode(HcfResult errCode)
 {
     switch (errCode) {
         case HCF_INVALID_PARAMS:
@@ -52,6 +54,8 @@ static uint32_t GetJsiErrValueByErrCode(HcfResult errCode)
             return JSI_ERR_CODE_RUNTIME_ERROR;
         case HCF_ERR_CRYPTO_OPERATION:
             return JSI_ERR_CODE_CRYPTO_OPERATION;
+        case HCF_ERR_INVALID_CALL:
+            return JSI_ERR_CODE_INVALID_CALL;
         default:
             return JSI_ERR_CODE_DEFAULT_ERR;
     }
@@ -60,7 +64,7 @@ static uint32_t GetJsiErrValueByErrCode(HcfResult errCode)
 JSIValue ThrowErrorCodeResult(int32_t errCode)
 {
     for (uint32_t index = 0; index < sizeof(g_errMsg) / sizeof(g_errMsg[0]); index++) {
-        if (g_errMsg[index].errorCode == GetJsiErrValueByErrCode((HcfResult)errCode)) {
+        if (g_errMsg[index].errorCode == GetJsiErrValueByErrCode(static_cast<HcfResult>(errCode))) {
             return JSI::CreateErrorWithCode(g_errMsg[index].errorCode, g_errMsg[index].errorMsg);
         }
     }
@@ -71,17 +75,17 @@ JSIValue ThrowErrorCodeResult(int32_t errCode)
 void CallbackErrorCodeOrDataResult(const JSIValue thisVal, const JSIValue args, int32_t errCode, const JSIValue data)
 {
     for (uint32_t index = 0; index < sizeof(g_errMsg) /sizeof(g_errMsg[0]); index++) {
-        if (g_errMsg[index].errorCode == GetJsiErrValueByErrCode((HcfResult)errCode)) {
+        if (g_errMsg[index].errorCode == GetJsiErrValueByErrCode(static_cast<HcfResult>(errCode))) {
             JSIValue errObj = JSI::CreateObject();
             JSI::SetNumberProperty(errObj, "code", g_errMsg[index].errorCode);
             JSI::SetStringProperty(errObj, "message", g_errMsg[index].errorMsg);
-            JSIValue params[ARRAY_MAX_SIZE] = { errObj, data };
-            JsiAsyncCallback(thisVal, args, params, ARRAY_MAX_SIZE);
+            JSIValue params[ARGS_SIZE_TWO] = { errObj, data };
+            JsiAsyncCallback(thisVal, args, params, ARGS_SIZE_TWO);
             return;
         }
     }
-    JSIValue params[ARRAY_MAX_SIZE] = { JSI::CreateUndefined(), data };
-    JsiAsyncCallback(thisVal, args, params, ARRAY_MAX_SIZE);
+    JSIValue params[ARGS_SIZE_TWO] = { JSI::CreateUndefined(), data };
+    JsiAsyncCallback(thisVal, args, params, ARGS_SIZE_TWO);
 }
 
 } // ACELite

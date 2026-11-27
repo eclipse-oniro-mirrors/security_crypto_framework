@@ -26,10 +26,12 @@ HcfResult NewEcKeyPair(int32_t curveId, EC_KEY **returnEcKey)
     EC_KEY *ecKey = OpensslEcKeyNewByCurveName(curveId);
     if (ecKey == NULL) {
         LOGE("new ec key failed.");
+        HcfPrintOpensslError();
         return HCF_ERR_CRYPTO_OPERATION;
     }
     if (OpensslEcKeyGenerateKey(ecKey) <= 0) {
         LOGE("generate ec key failed.");
+        HcfPrintOpensslError();
         OpensslEcKeyFree(ecKey);
         return HCF_ERR_CRYPTO_OPERATION;
     }

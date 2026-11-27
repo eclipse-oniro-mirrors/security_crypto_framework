@@ -15,7 +15,11 @@
 
 #include "sym_key_generator.h"
 #include "sym_key_factory_spi.h"
+#ifdef CRYPTO_MBEDTLS
+#include "mbedtls_sym_key.h"
+#else
 #include "sym_common_defines.h"
+#endif
 #include "params_parser.h"
 #include "utils.h"
 
@@ -60,8 +64,14 @@ typedef struct {
 } HcfSymmKeyGeneratorImpl;
 
 static const SymKeyGenAbility SYMKEY_ABILITY_SET[] = {
+#ifdef CRYPTO_MBEDTLS
+    { HCF_ALG_AES, { MbedtlsSymKeyGeneratorSpiCreate }},
+    { HCF_ALG_HMAC, { MbedtlsSymKeyGeneratorSpiCreate }},
+#else
     { HCF_ALG_AES, { HcfSymKeyGeneratorSpiCreate }},
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
     { HCF_ALG_SM4, { HcfSymKeyGeneratorSpiCreate }},
+#endif
     { HCF_ALG_DES, { HcfSymKeyGeneratorSpiCreate }},
     { HCF_ALG_3DES, { HcfSymKeyGeneratorSpiCreate }},
     { HCF_ALG_HMAC, { HcfSymKeyGeneratorSpiCreate }},
@@ -71,6 +81,7 @@ static const SymKeyGenAbility SYMKEY_ABILITY_SET[] = {
     { HCF_ALG_RC4, { HcfSymKeyGeneratorSpiCreate }},
     { HCF_ALG_BLOWFISH, { HcfSymKeyGeneratorSpiCreate }},
     { HCF_ALG_CAST, { HcfSymKeyGeneratorSpiCreate }},
+#endif
 };
 
 static const SymKeyGenFuncSet *FindAbility(SymKeyAttr *attr)
@@ -105,10 +116,12 @@ static void SetKeyLength(HcfAlgParaValue value, void *attr)
             keyAttr->algo = HCF_ALG_AES;
             keyAttr->keySize = AES_KEY_SIZE_256;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM4
         case HCF_ALG_SM4_128:
             keyAttr->algo = HCF_ALG_SM4;
             keyAttr->keySize = SM4_KEY_SIZE_128;
             break;
+#endif
         case HCF_ALG_3DES_192:
             keyAttr->algo = HCF_ALG_3DES;
             keyAttr->keySize = TRIPLE_DES_KEY_SIZE_192;
@@ -170,9 +183,11 @@ static void SetKeyLenByDigest(HcfAlgParaValue value, void *attr)
         case HCF_OPENSSL_DIGEST_SHA3_512:
             keyAttr->keySize = HMAC_KEY_SIZE_SHA512;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
         case HCF_OPENSSL_DIGEST_SM3:
             keyAttr->keySize = HMAC_KEY_SIZE_SM3;
             break;
+#endif
         case HCF_OPENSSL_DIGEST_MD5:
             keyAttr->keySize = HMAC_KEY_SIZE_MD5;
             break;
@@ -190,9 +205,6 @@ static HcfResult OnSetSymKeyParameter(const HcfParaConfig* config, void *attr)
         return HCF_INVALID_PARAMS;
     }
     HcfResult ret = HCF_SUCCESS;
-    LOGD("Set Parameter:%{public}s", config->tag);
-    LOGD("Set Parameter:%{public}d", config->paraType);
-    LOGD("Set Parameter:%{public}d", config->paraValue);
     switch (config->paraType) {
         case HCF_ALG_KEY_TYPE:
             SetKeyLength(config->paraValue, attr);
@@ -223,7 +235,7 @@ static const char *GetAlgoName(HcfSymKeyGenerator *self)
         return NULL;
     }
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetSymKeyGeneratorClass())) {
-        LOGE("Class is not match!");
+        LOGE("Class is not match.");
         return NULL;
     }
     return ((HcfSymmKeyGeneratorImpl *)self)->algoName;
@@ -258,7 +270,7 @@ static HcfResult GenerateSymmKey(HcfSymKeyGenerator *self, HcfSymKey **symmKey)
     HcfSymmKeyGeneratorImpl *impl = (HcfSymmKeyGeneratorImpl *)self;
     if (strcmp(impl->algoName, "RC2") == 0 || strcmp(impl->algoName, "RC4") == 0 ||
         strcmp(impl->algoName, "CAST") == 0 || strcmp(impl->algoName, "Blowfish") == 0) {
-        LOGE("Algorithm does not support generateSymKey, use convertSymKey only.");
+        LOGE("use convertSymKey");
         return HCF_ERR_INVALID_CALL;
     }
     if (impl->spiObj == NULL || impl->spiObj->engineGenerateSymmKey == NULL) {
@@ -295,8 +307,8 @@ HcfResult HcfSymKeyGeneratorCreate(const char *algoName, HcfSymKeyGenerator **re
     }
 
     SymKeyAttr attr = {0};
-    if (ParseAndSetParameter(algoName, (void *)&attr, OnSetSymKeyParameter) != HCF_SUCCESS) {
-        LOGE("ParseAndSetParameter Failed!");
+    if (HcfParseAndSetParameter(algoName, (void *)&attr, OnSetSymKeyParameter) != HCF_SUCCESS) {
+        LOGE("HcfParseAndSetParameter Failed!");
         return HCF_NOT_SUPPORT;
     }
 

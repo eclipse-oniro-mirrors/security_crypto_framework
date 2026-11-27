@@ -261,9 +261,11 @@ HcfResult GetOpensslDigestAlg(uint32_t alg, EVP_MD **digestAlg)
         case HCF_OPENSSL_DIGEST_MD5:
             *digestAlg = (EVP_MD *)EVP_md5();
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
         case HCF_OPENSSL_DIGEST_SM3:
             *digestAlg = (EVP_MD *)EVP_sm3();
             break;
+#endif
         case HCF_OPENSSL_DIGEST_SHA1:
             *digestAlg = (EVP_MD *)EVP_sha1();
             break;
@@ -306,9 +308,11 @@ HcfResult GetRsaSpecStringMd(const HcfAlgParaValue md, char **returnString)
         case HCF_OPENSSL_DIGEST_MD5:
             tmp = HCF_OPENSSL_DIGEST_MD5_STR;
             break;
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
         case HCF_OPENSSL_DIGEST_SM3:
             tmp = HCF_OPENSSL_DIGEST_SM3_STR;
             break;
+#endif
         case HCF_OPENSSL_DIGEST_SHA1:
             tmp = HCF_OPENSSL_DIGEST_SHA1_STR;
             break;
@@ -364,6 +368,7 @@ HcfResult GetRsaSpecStringMGF(char **returnString)
     return HCF_SUCCESS;
 }
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
 HcfResult GetSm2SpecStringSm3(char **returnString)
 {
     if (returnString == NULL) {
@@ -389,10 +394,11 @@ HcfResult GetSm2SpecStringSm3(char **returnString)
     *returnString = sm2Str;
     return HCF_SUCCESS;
 }
+#endif
 
 void HcfPrintOpensslError(void)
 {
-    char szErr[LOG_PRINT_MAX_LEN] = {0}; // Then maximum length of the OpenSSL error string is 256.
+    char szErr[HCF_LOG_PRINT_MAX_LEN] = {0}; // Then maximum length of the OpenSSL error string is 256.
     unsigned long peekError;
     unsigned long lastError;
 
@@ -400,14 +406,14 @@ void HcfPrintOpensslError(void)
     if (peekError == 0) {
         return;
     }
-    ERR_error_string_n(peekError, szErr, LOG_PRINT_MAX_LEN);
+    ERR_error_string_n(peekError, szErr, HCF_LOG_PRINT_MAX_LEN);
     LOGE("Openssl error code = %{public}lu, error string = %{public}s", peekError, szErr);
 
     lastError = ERR_peek_last_error();
     if (lastError == 0 || lastError == peekError) {
         return;
     }
-    ERR_error_string_n(lastError, szErr, LOG_PRINT_MAX_LEN);
+    ERR_error_string_n(lastError, szErr, HCF_LOG_PRINT_MAX_LEN);
     LOGE("Openssl error code = %{public}lu, error string = %{public}s", lastError, szErr);
 }
 

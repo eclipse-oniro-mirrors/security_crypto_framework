@@ -265,6 +265,7 @@ static HcfResult SetSignParams(HcfSignSpiRsaOpensslImpl *impl, HcfPriKey *privat
     OpensslEvpPkeyFree(dupKey);
     if (ret != HCF_OPENSSL_SUCCESS) {
         LOGE("Failed to initialize digest signing.");
+        HcfPrintOpensslError();
         return HCF_ERR_CRYPTO_OPERATION;
     }
     if (SetPaddingAndDigest(ctx, impl->padding, impl->md, impl->mgf1md) != HCF_SUCCESS) {
@@ -274,6 +275,7 @@ static HcfResult SetSignParams(HcfSignSpiRsaOpensslImpl *impl, HcfPriKey *privat
     if (impl->saltLen != PSS_SALTLEN_INVALID_INIT) {
         if (OpensslEvpPkeyCtxSetRsaPssSaltLen(ctx, impl->saltLen) != HCF_OPENSSL_SUCCESS) {
             LOGE("get saltLen fail");
+            HcfPrintOpensslError();
             return HCF_ERR_CRYPTO_OPERATION;
         }
     }
@@ -397,6 +399,7 @@ static HcfResult SetVerifyParams(HcfVerifySpiRsaOpensslImpl *impl, HcfPubKey *pu
     if (impl->saltLen != PSS_SALTLEN_INVALID_INIT) {
         if (OpensslEvpPkeyCtxSetRsaPssSaltLen(ctx, impl->saltLen) != HCF_OPENSSL_SUCCESS) {
             LOGE("get saltLen fail");
+            HcfPrintOpensslError();
             return HCF_ERR_CRYPTO_OPERATION;
         }
     }
@@ -510,6 +513,7 @@ static HcfResult EngineSignUpdate(HcfSignSpi *self, HcfBlob *data)
     }
     if (OpensslEvpDigestSignUpdate(impl->mdctx, data->data, data->len) != HCF_OPENSSL_SUCCESS) {
         LOGE("Failed to update digest sign data.");
+        HcfPrintOpensslError();
         return HCF_ERR_CRYPTO_OPERATION;
     }
     return HCF_SUCCESS;
@@ -548,6 +552,7 @@ static HcfResult EngineVerifyUpdate(HcfVerifySpi *self, HcfBlob *data)
 
     if (OpensslEvpDigestVerifyUpdate(impl->mdctx, data->data, data->len) != HCF_OPENSSL_SUCCESS) {
         LOGE("Failed to update digest sign data.");
+        HcfPrintOpensslError();
         return HCF_ERR_CRYPTO_OPERATION;
     }
     return HCF_SUCCESS;
@@ -695,6 +700,7 @@ static bool EngineVerify(HcfVerifySpi *self, HcfBlob *data, HcfBlob *signatureDa
     }
     if (OpensslEvpDigestVerifyFinal(impl->mdctx, signatureData->data, signatureData->len) != HCF_OPENSSL_SUCCESS) {
         LOGE("Failed to finalize digest verification.");
+        HcfPrintOpensslError();
         return false;
     }
     return true;
@@ -847,6 +853,7 @@ static HcfResult EngineSetSignSpecInt(HcfSignSpi *self, SignSpecItem item, int32
     if (impl->initFlag == INITIALIZED) {
         if (OpensslEvpPkeyCtxSetRsaPssSaltLen(impl->ctx, saltLen) != HCF_OPENSSL_SUCCESS) {
             LOGE("set saltLen fail");
+            HcfPrintOpensslError();
             return HCF_ERR_CRYPTO_OPERATION;
         }
     }
@@ -967,6 +974,7 @@ static HcfResult EngineSetVerifySpecInt(HcfVerifySpi *self, SignSpecItem item, i
     if (impl->initFlag == INITIALIZED) {
         if (OpensslEvpPkeyCtxSetRsaPssSaltLen(impl->ctx, saltLen) != HCF_OPENSSL_SUCCESS) {
             LOGE("set saltLen fail");
+            HcfPrintOpensslError();
             return HCF_ERR_CRYPTO_OPERATION;
         }
     }

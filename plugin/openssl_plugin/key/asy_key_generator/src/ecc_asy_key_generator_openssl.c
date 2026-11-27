@@ -568,6 +568,7 @@ static HcfResult GenerateEcKeyWithParamsSpec(const HcfEccCommParamsSpec *ecParam
         LOGD("generate EC_KEY by curve name");
         if (ecKey == NULL) {
             LOGE("new ec key failed.");
+            HcfPrintOpensslError();
             return HCF_ERR_CRYPTO_OPERATION;
         }
     } else {
@@ -611,6 +612,7 @@ static HcfResult NewEcKeyPairWithCommSpec(const HcfEccCommParamsSpec *ecParams, 
     }
     if (OpensslEcKeyGenerateKey(ecKey) != HCF_OPENSSL_SUCCESS) {
         LOGE("Failed to generate EC key pair.");
+        HcfPrintOpensslError();
         OpensslEcKeyFree(ecKey);
         return HCF_ERR_CRYPTO_OPERATION;
     }
@@ -1028,6 +1030,7 @@ static EC_KEY *ConvertOsslParamsToEccPubKey(const char *groupName, int32_t curve
         ctx = OpensslEvpPkeyCtxNewId(EVP_PKEY_EC, NULL);
         if (ctx == NULL) {
             LOGE("Failed to create EVP_PKEY_CTX");
+            HcfPrintOpensslError();
             break;
         }
         if (OpensslEvpPkeyParamGenInit(ctx) <= 0) {
@@ -1257,7 +1260,7 @@ static HcfResult GetEccPriKeyEncodedPem(const HcfPriKey *self, HcfParamsSpec *pa
     }
     if (paramsSpec != NULL) {
         LOGE("Ecc pri key pem with params is not supported.");
-        return HCF_NOT_SUPPORT;
+        return HCF_INVALID_PARAMS;
     }
 
     return GetEccPriKeyEncodedPemInCommon(self, format, returnString);

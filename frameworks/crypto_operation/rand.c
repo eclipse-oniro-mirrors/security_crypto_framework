@@ -93,7 +93,7 @@ static const char *GetAlgoName(HcfRand *self)
         return NULL;
     }
     if (!HcfIsClassMatch((HcfObjectBase *)self, GetRandClass())) {
-        LOGE("Class is not match!");
+        LOGE("Class is not match.");
         return NULL;
     }
     return ((HcfRandImpl *)self)->spiObj->engineGetAlgoName(((HcfRandImpl *)self)->spiObj);

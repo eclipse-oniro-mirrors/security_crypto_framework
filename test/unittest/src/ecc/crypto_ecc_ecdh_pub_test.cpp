@@ -916,6 +916,7 @@ static HcfBlob g_inputTwo = {
     .len = 24
 };
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
 // SM2_256 point data
 constexpr size_t SM2_POINT_UNCOMPRESSED_SIZE = 65;
 constexpr size_t SM2_POINT_COMPRESSED_SIZE = 33;
@@ -937,6 +938,7 @@ static HcfBlob g_sm2PointCompressedBlob = {
     .data = g_sm2PointCompressedBlobData,
     .len = SM2_POINT_COMPRESSED_SIZE
 };
+#endif
 
 // ECC_BrainPoolP256r1 public and private key data
 constexpr size_t P256R1_PUBKEY_DATA_SIZE = 92;
@@ -1075,6 +1077,7 @@ HWTEST_F(CryptoEccEcdhPubTest, CryptoEccEcdhPubTest002, TestSize.Level0)
     HcfObjDestroy(keyAgreement);
 }
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
 HWTEST_F(CryptoEccEcdhPubTest, CryptoEccEcdhPubTest003, TestSize.Level0)
 {
     HcfPoint returnPoint = { .x = { .data = nullptr, .len = 0 }, .y = { .data = nullptr, .len = 0 } };
@@ -1094,7 +1097,9 @@ HWTEST_F(CryptoEccEcdhPubTest, CryptoEccEcdhPubTest003, TestSize.Level0)
     FreeEcPointMem(&returnPoint);
     HcfBlobDataFree(&returnBlob);
 }
+#endif
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
 HWTEST_F(CryptoEccEcdhPubTest, CryptoEccEcdhPubTest004, TestSize.Level0)
 {
     HcfPoint returnPoint = { .x = { .data = nullptr, .len = 0 }, .y = { .data = nullptr, .len = 0 } };
@@ -1114,6 +1119,7 @@ HWTEST_F(CryptoEccEcdhPubTest, CryptoEccEcdhPubTest004, TestSize.Level0)
     FreeEcPointMem(&returnPoint);
     HcfBlobDataFree(&returnBlob);
 }
+#endif
 
 HWTEST_F(CryptoEccEcdhPubTest, CryptoEccEcdhPubTest005, TestSize.Level0)
 {

@@ -918,7 +918,9 @@ static void AsyKeyConvertPemTest(const char *algoName, const char *pubKey, const
 
 HWTEST_F(CryptoAsyKeyConvertPemTest, CryptoAsyKeyConvertPemTest001, TestSize.Level0)
 {
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     AsyKeyConvertPemTest("SM2_256", g_testSm2PubKey.c_str(), g_testSm2PriKey.c_str());
+#endif
     AsyKeyConvertPemTest("X25519", g_testX25519PubKey.c_str(), g_testX25519PriKey.c_str());
     AsyKeyConvertPemTest("Ed25519", g_testEd25519PubKey.c_str(), g_testEd25519PriKey.c_str());
     AsyKeyConvertPemTest("ECC224", g_testEccSecp224r1PubKey.c_str(), g_testEccSecp224r1PriKey.c_str());
@@ -983,7 +985,9 @@ static void AsyKeyPemParamNullErrorTest(const char *algoName, const char *pubKey
 // test ConvertPemKey parma is null
 HWTEST_F(CryptoAsyKeyConvertPemTest, CryptoAsyKeyConvertPemTest002, TestSize.Level0)
 {
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     AsyKeyPemParamNullErrorTest("SM2_256", g_testSm2PubKey.c_str(), g_testSm2PriKey.c_str());
+#endif
     AsyKeyPemParamNullErrorTest("X25519", g_testX25519PubKey.c_str(), g_testX25519PriKey.c_str());
     AsyKeyPemParamNullErrorTest("Ed25519", g_testEd25519PubKey.c_str(), g_testEd25519PriKey.c_str());
     AsyKeyPemParamNullErrorTest("ECC224", g_testEccSecp224r1PubKey.c_str(), g_testEccSecp224r1PriKey.c_str());
@@ -1017,7 +1021,9 @@ static void AsyKeyPemParamFormatErrorTest(const char *algoName, const char *pubK
 // test ConvertPemKey pubkey and prikey is invalid
 HWTEST_F(CryptoAsyKeyConvertPemTest, CryptoAsyKeyConvertPemTest003, TestSize.Level0)
 {
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     AsyKeyPemParamFormatErrorTest("SM2_256", g_testSm2PubKey.c_str(), g_testSm2PriKey.c_str());
+#endif
     AsyKeyPemParamFormatErrorTest("X25519", g_testX25519PubKey.c_str(), g_testX25519PriKey.c_str());
     AsyKeyPemParamFormatErrorTest("Ed25519", g_testEd25519PubKey.c_str(), g_testEd25519PriKey.c_str());
     AsyKeyPemParamFormatErrorTest("ECC224", g_testEccSecp224r1PubKey.c_str(), g_testEccSecp224r1PriKey.c_str());
@@ -1050,32 +1056,44 @@ static void AsyKeyPemParamMatchErrorTest(const char *algoName, const char *pubKe
 
 HWTEST_F(CryptoAsyKeyConvertPemTest, CryptoAsyKeyConvertPemTest004, TestSize.Level0)
 {
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     AsyKeyPemParamMatchErrorTest("SM2_256", g_testX25519PubKey.c_str(), g_testX25519PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("SM2_256", g_testEd25519PubKey.c_str(), g_testEd25519PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("SM2_256", g_testEccSecp224r1PubKey.c_str(), g_testEccSecp224r1PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("SM2_256", g_testDsa1024Pubkey.c_str(), g_testDsa1024Prikey.c_str());
     AsyKeyPemParamMatchErrorTest("SM2_256", g_testDhModp1536PubKey.c_str(), g_testDhModp1536PriKey.c_str());
+#endif
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     AsyKeyPemParamMatchErrorTest("X25519", g_testSm2PubKey.c_str(), g_testSm2PriKey.c_str());
+#endif
     AsyKeyPemParamMatchErrorTest("X25519", g_testEd25519PubKey.c_str(), g_testEd25519PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("X25519", g_testEccSecp224r1PubKey.c_str(), g_testEccSecp224r1PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("X25519", g_testDsa1024Pubkey.c_str(), g_testDsa1024Prikey.c_str());
     AsyKeyPemParamMatchErrorTest("X25519", g_testDhModp1536PubKey.c_str(), g_testDhModp1536PriKey.c_str());
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     AsyKeyPemParamMatchErrorTest("Ed25519", g_testSm2PubKey.c_str(), g_testSm2PriKey.c_str());
+#endif
     AsyKeyPemParamMatchErrorTest("Ed25519", g_testX25519PubKey.c_str(), g_testX25519PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("Ed25519", g_testEccSecp224r1PubKey.c_str(), g_testEccSecp224r1PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("Ed25519", g_testDsa1024Pubkey.c_str(), g_testDsa1024Prikey.c_str());
     AsyKeyPemParamMatchErrorTest("Ed25519", g_testDhModp1536PubKey.c_str(), g_testDhModp1536PriKey.c_str());
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     AsyKeyPemParamMatchErrorTest("ECC224", g_testSm2PubKey.c_str(), g_testSm2PriKey.c_str());
+#endif
     AsyKeyPemParamMatchErrorTest("ECC224", g_testX25519PubKey.c_str(), g_testX25519PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("ECC224", g_testEd25519PubKey.c_str(), g_testEd25519PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("ECC224", g_testDsa1024Pubkey.c_str(), g_testDsa1024Prikey.c_str());
     AsyKeyPemParamMatchErrorTest("ECC224", g_testDhModp1536PubKey.c_str(), g_testDhModp1536PriKey.c_str());
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     AsyKeyPemParamMatchErrorTest("DSA1024", g_testSm2PubKey.c_str(), g_testSm2PriKey.c_str());
+#endif
     AsyKeyPemParamMatchErrorTest("DSA1024", g_testX25519PubKey.c_str(), g_testX25519PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("DSA1024", g_testEd25519PubKey.c_str(), g_testEd25519PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("DSA1024", g_testEccSecp224r1PubKey.c_str(), g_testEccSecp224r1PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("DSA1024", g_testDhModp1536PubKey.c_str(), g_testDhModp1536PriKey.c_str());
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     AsyKeyPemParamMatchErrorTest("DH_modp1536", g_testSm2PubKey.c_str(), g_testSm2PriKey.c_str());
+#endif
     AsyKeyPemParamMatchErrorTest("DH_modp1536", g_testX25519PubKey.c_str(), g_testX25519PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("DH_modp1536", g_testEd25519PubKey.c_str(), g_testEd25519PriKey.c_str());
     AsyKeyPemParamMatchErrorTest("DH_modp1536", g_testEccSecp224r1PubKey.c_str(), g_testEccSecp224r1PriKey.c_str());

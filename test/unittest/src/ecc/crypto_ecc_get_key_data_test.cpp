@@ -517,10 +517,12 @@ HWTEST_F(CryptoEccGetKeyDataTest, CryptoNonEcGetKeyDataInvalidCallDh001, TestSiz
     EXPECT_EQ(NonEcGetKeyDataInvalidCallTest("DH_modp1536"), HCF_SUCCESS);
 }
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
 HWTEST_F(CryptoEccGetKeyDataTest, CryptoNonEcGetKeyDataInvalidCallSm2_001, TestSize.Level0)
 {
     EXPECT_EQ(NonEcGetKeyDataInvalidCallTest("SM2_256"), HCF_SUCCESS);
 }
+#endif
 
 HWTEST_F(CryptoEccGetKeyDataTest, CryptoNonEcGetKeyDataInvalidCallEd25519001, TestSize.Level0)
 {

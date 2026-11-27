@@ -299,6 +299,7 @@ HWTEST_F(NativeSignatureTest, NativeSignatureTest_SignVerify001, TestSize.Level0
     OH_CryptoAsymKeyGenerator_Destroy(keyCtx);
 }
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) && !defined(CRYPTO_FRAMEWORK_DISABLE_SM3)
 HWTEST_F(NativeSignatureTest, NativeSignatureTest_DerToRS001, TestSize.Level0)
 {
     OH_CryptoAsymKeyGenerator *keyCtx = nullptr;
@@ -355,6 +356,7 @@ HWTEST_F(NativeSignatureTest, NativeSignatureTest_DerToRS001, TestSize.Level0)
     OH_CryptoAsymKeyGenerator_Destroy(keyCtx);
     OH_CryptoKeyPair_Destroy(keyPair);
 }
+#endif
 
 HWTEST_F(NativeSignatureTest, CryptoVerifyRecoverTest001, TestSize.Level0)
 {
@@ -421,6 +423,7 @@ HWTEST_F(NativeSignatureTest, CryptoVerifySetParamPssTest001, TestSize.Level0)
     OH_CryptoAsymKeyGenerator_Destroy(generator);
 }
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) && !defined(CRYPTO_FRAMEWORK_DISABLE_SM3)
 HWTEST_F(NativeSignatureTest, CryptoVerifySetParamSm2UserIdTest001, TestSize.Level0)
 {
     OH_CryptoAsymKeyGenerator *generator = nullptr;
@@ -450,6 +453,7 @@ HWTEST_F(NativeSignatureTest, CryptoVerifySetParamSm2UserIdTest001, TestSize.Lev
     OH_CryptoKeyPair_Destroy(keyPair);
     OH_CryptoAsymKeyGenerator_Destroy(generator);
 }
+#endif
 
 HWTEST_F(NativeSignatureTest, CryptoVerifyGetParamPssTest001, TestSize.Level0)
 {
@@ -546,6 +550,7 @@ HWTEST_F(NativeSignatureTest, CryptoSignSetParamPssTest001, TestSize.Level0)
     OH_CryptoAsymKeyGenerator_Destroy(generator);
 }
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) && !defined(CRYPTO_FRAMEWORK_DISABLE_SM3)
 HWTEST_F(NativeSignatureTest, CryptoSignSetParamSm2UserIdTest001, TestSize.Level0)
 {
     OH_CryptoAsymKeyGenerator *generator = nullptr;
@@ -575,6 +580,7 @@ HWTEST_F(NativeSignatureTest, CryptoSignSetParamSm2UserIdTest001, TestSize.Level
     OH_CryptoKeyPair_Destroy(keyPair);
     OH_CryptoAsymKeyGenerator_Destroy(generator);
 }
+#endif
 
 HWTEST_F(NativeSignatureTest, CryptoSignGetParamPssTest001, TestSize.Level0)
 {
@@ -672,6 +678,7 @@ HWTEST_F(NativeSignatureTest, CryptoEccSignatureSpecCreateNullTest002, TestSize.
     EXPECT_EQ(res, CRYPTO_PARAMETER_CHECK_FAILED);
 }
 
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) && !defined(CRYPTO_FRAMEWORK_DISABLE_SM3)
 HWTEST_F(NativeSignatureTest, CryptoEccSignatureSpecEncodeTest001, TestSize.Level0)
 {
     OH_CryptoAsymKeyGenerator *generator = nullptr;
@@ -730,6 +737,7 @@ HWTEST_F(NativeSignatureTest, CryptoEccSignatureSpecEncodeTest001, TestSize.Leve
     OH_CryptoKeyPair_Destroy(keyPair);
     OH_CryptoAsymKeyGenerator_Destroy(generator);
 }
+#endif
 
 HWTEST_F(NativeSignatureTest, CryptoEccSignatureSpecEncodeNullTest001, TestSize.Level0)
 {

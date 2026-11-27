@@ -18,7 +18,6 @@
 
 #include "result.h"
 #include "crypto_common.h"
-#include "native_api_metrics.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,9 +26,6 @@ extern "C" {
 OH_Crypto_ErrCode GetOhCryptoErrCode(HcfResult errCode);
 OH_Crypto_ErrCode GetOhCryptoErrCodeNew(HcfResult errCode);
 
-void ReverseUint8Arr(uint8_t *data, size_t len);
-uint32_t BigEndianArrToUint32(const uint8_t *data, size_t len);
-void Uint32TobigEndianArr(uint32_t value, uint8_t *data, size_t len);
 #ifdef __cplusplus
 }
 #endif

@@ -708,6 +708,7 @@ static HcfResult GenerateAlg25519PubAndPriKey(int type, HcfOpensslAlg25519PubKey
     HcfResult ret = GenerateAlg25519EvpKey(type, &pkey);
     if (ret != HCF_SUCCESS) {
         LOGE("Generate alg25519 EVP_PKEY failed.");
+        HcfPrintOpensslError();
         return ret;
     }
 

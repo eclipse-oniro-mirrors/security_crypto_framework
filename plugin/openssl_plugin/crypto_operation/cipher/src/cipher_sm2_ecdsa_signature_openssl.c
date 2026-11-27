@@ -110,6 +110,7 @@ HcfResult HcfDerDataToSm2Spec(HcfBlob *input, Sm2EcSignatureDataSpec **returnSpe
     ECDSA_SIG *sig = OpensslD2iSm2EcdsaSig(&data, (int)input->len);
     if (sig == NULL) {
         LOGE("SM2 build SM2Ciphertext fail");
+        HcfPrintOpensslError();
         DestroySm2EcSignatureSpec(tempSpec);
         OpensslSm2EcdsaSigFree(sig);
         return HCF_ERR_CRYPTO_OPERATION;

@@ -58,12 +58,18 @@ typedef struct {
 
 static bool IsDigestAlgValid(uint32_t alg)
 {
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
     if (alg == HCF_OPENSSL_DIGEST_SM3) {
         return true;
     } else {
         LOGE("Invalid digest num!");
         return false;
     }
+#else
+    (void)alg;
+    LOGE("SM3 digest is disabled, SM2 sign/verify is unavailable.");
+    return false;
+#endif
 }
 
 // export interfaces
@@ -267,6 +273,10 @@ static HcfResult EngineSignDoFinal(HcfSignSpi *self, HcfBlob *data, HcfBlob *ret
     }
 
     HcfSignSpiSm2OpensslImpl *impl = (HcfSignSpiSm2OpensslImpl *)self;
+    if (impl->status == UNINITIALIZED) {
+        LOGW("Sign instance may not have been initialized, "
+            "ensure init interface of Sign instance is executed completely!");
+    }
     if (HcfIsBlobValid(data)) {
         if (OpensslEvpDigestSignUpdate(impl->mdCtx, data->data, data->len) != HCF_OPENSSL_SUCCESS) {
             HcfPrintOpensslError();
@@ -405,6 +415,10 @@ static bool EngineVerifyDoFinal(HcfVerifySpi *self, HcfBlob *data, HcfBlob *sign
     }
 
     HcfVerifySpiSm2OpensslImpl *impl = (HcfVerifySpiSm2OpensslImpl *)self;
+    if (impl->status == UNINITIALIZED) {
+        LOGW("Verify instance may not have been initialized, "
+            "ensure init interface of Verify instance is executed completely!");
+    }
     if (HcfIsBlobValid(data)) {
         if (OpensslEvpDigestVerifyUpdate(impl->mdCtx, data->data, data->len) != HCF_OPENSSL_SUCCESS) {
             HcfPrintOpensslError();
@@ -530,6 +544,10 @@ static HcfResult EngineSetVerifySpecUint8Array(HcfVerifySpi *self, SignSpecItem 
     }
     if (item != SM2_USER_ID_UINT8ARR) {
         LOGE("Invalid input spec");
+        return HCF_INVALID_PARAMS;
+    }
+    if (userId.len > UINT32_MAX) {
+        LOGE("Invalid userId len");
         return HCF_INVALID_PARAMS;
     }
     HcfVerifySpiSm2OpensslImpl *impl = (HcfVerifySpiSm2OpensslImpl *)self;

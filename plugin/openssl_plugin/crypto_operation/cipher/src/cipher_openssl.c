@@ -29,8 +29,9 @@
 
 typedef struct {
     HcfCipherGeneratorSpi base;
-    CipherAttr attr;
+    HcfCipherAttr attr;
     CipherData cipherData;
+    CryptoStatus initFlag;
 } HcfCipherSymAlgorithmGeneratorSpiOpensslImpl;
 
 #define SYM_ALG_BLOCK_SIZE 8
@@ -139,6 +140,7 @@ static HcfResult InitCipherData(enum HcfCryptoMode opMode, CipherData *cipherDat
         LOGE("cipherData is null.");
         return HCF_ERR_PARAMETER_CHECK_FAILED;
     }
+    ClearCipherData(cipherData);
     cipherData->enc = opMode;
     cipherData->ctx = OpensslEvpCipherCtxNew();
     if (cipherData->ctx == NULL) {
@@ -199,7 +201,7 @@ static const unsigned char *GetIvData(HcfCipherSymAlgorithmGeneratorSpiOpensslIm
     return spec->iv.data;
 }
 
-static HcfResult SetSymAlgCipherAttribute(HcfCipherSymAlgorithmGeneratorSpiOpensslImpl *cipherImpl,
+static HcfResult SetSymAlgHcfCipherAttribute(HcfCipherSymAlgorithmGeneratorSpiOpensslImpl *cipherImpl,
     SymKeyImpl *keyImpl, int32_t enc, HcfParamsSpec *params)
 {
     CipherData *data = &cipherImpl->cipherData;
@@ -271,12 +273,13 @@ static HcfResult EngineCipherInit(HcfCipherGeneratorSpi *self, enum HcfCryptoMod
         LOGE("Failed to initialize cipher data.");
         return ret;
     }
-    ret = SetSymAlgCipherAttribute(cipherImpl, keyImpl, (opMode == ENCRYPT_MODE) ? 1 : 0, params);
+    ret = SetSymAlgHcfCipherAttribute(cipherImpl, keyImpl, (opMode == ENCRYPT_MODE) ? 1 : 0, params);
     if (ret != HCF_SUCCESS) {
         LOGE("Failed to set symmetric algorithm cipher attribute.");
         ClearCipherData(&cipherImpl->cipherData);
         return ret;
     }
+    cipherImpl->initFlag = INITIALIZED;
     return ret;
 }
 
@@ -314,11 +317,16 @@ static HcfResult EngineUpdate(HcfCipherGeneratorSpi *self, HcfBlob *input, HcfBl
         LOGE("Class is not match.");
         return HCF_ERR_PARAMETER_CHECK_FAILED;
     }
-    HcfCipherSymAlgorithmGeneratorSpiOpensslImpl *cipherImpl =
-        (HcfCipherSymAlgorithmGeneratorSpiOpensslImpl *)self;
+    HcfCipherSymAlgorithmGeneratorSpiOpensslImpl *cipherImpl = (HcfCipherSymAlgorithmGeneratorSpiOpensslImpl *)self;
+    if (cipherImpl->initFlag != INITIALIZED) {
+        LOGW("Cipher instance may not have been initialized, "
+            "ensure init interface of Cipher instance is executed completely!");
+    }
+
     CipherData *data = &cipherImpl->cipherData;
     if (data->ctx == NULL) {
-        LOGE("CipherData ctx is null.");
+        LOGE("The ctx of Cipher instance is NULL, "
+            "please check if init interface of Cipher instance is executed completely!");
         return HCF_ERR_PARAMETER_CHECK_FAILED;
     }
     bool isUpdateInput = false;
@@ -373,11 +381,16 @@ static HcfResult EngineDoFinal(HcfCipherGeneratorSpi *self, HcfBlob *input, HcfB
         LOGE("Class is not match.");
         return HCF_ERR_PARAMETER_CHECK_FAILED;
     }
-    HcfCipherSymAlgorithmGeneratorSpiOpensslImpl *cipherImpl =
-        (HcfCipherSymAlgorithmGeneratorSpiOpensslImpl *)self;
+    HcfCipherSymAlgorithmGeneratorSpiOpensslImpl *cipherImpl = (HcfCipherSymAlgorithmGeneratorSpiOpensslImpl *)self;
+    if (cipherImpl->initFlag != INITIALIZED) {
+        LOGW("Cipher instance may not have been initialized, "
+            "ensure init interface of Cipher instance is executed completely!");
+    }
+
     CipherData *data = &cipherImpl->cipherData;
     if (data->ctx == NULL) {
-        LOGE("CipherData ctx is null.");
+        LOGE("The ctx of Cipher instance is NULL, "
+            "please check if init interface of Cipher instance is executed completely!");
         return HCF_ERR_PARAMETER_CHECK_FAILED;
     }
     bool isUpdateInput = false;
@@ -442,7 +455,7 @@ static HcfResult SetSymAlgCipherSpecUint8Array(HcfCipherGeneratorSpi *self, Ciph
     return HCF_ERR_INVALID_CALL;
 }
 
-HcfResult HcfCipherSymAlgorithmGeneratorSpiCreate(CipherAttr *attr, HcfCipherGeneratorSpi **generator)
+HcfResult HcfCipherSymAlgorithmGeneratorSpiCreate(HcfCipherAttr *attr, HcfCipherGeneratorSpi **generator)
 {
     if ((attr == NULL) || (generator == NULL)) {
         LOGE("Invalid input parameter.");
@@ -456,7 +469,7 @@ HcfResult HcfCipherSymAlgorithmGeneratorSpiCreate(CipherAttr *attr, HcfCipherGen
         LOGE("Failed to allocate returnImpl memory.");
         return HCF_ERR_MALLOC;
     }
-    (void)memcpy_s(&returnImpl->attr, sizeof(CipherAttr), attr, sizeof(CipherAttr));
+    (void)memcpy_s(&returnImpl->attr, sizeof(HcfCipherAttr), attr, sizeof(HcfCipherAttr));
     returnImpl->base.init = EngineCipherInit;
     returnImpl->base.update = EngineUpdate;
     returnImpl->base.doFinal = EngineDoFinal;

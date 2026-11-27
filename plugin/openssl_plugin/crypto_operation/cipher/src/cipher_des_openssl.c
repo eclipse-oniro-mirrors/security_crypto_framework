@@ -33,8 +33,9 @@
 
 typedef struct {
     HcfCipherGeneratorSpi base;
-    CipherAttr attr;
+    HcfCipherAttr attr;
     CipherData *cipherData;
+    CryptoStatus initFlag;
 } HcfCipherDesGeneratorSpiOpensslImpl;
 
 static const char *GetDesGeneratorClass(void)
@@ -93,6 +94,7 @@ static const EVP_CIPHER *GetDesCipherType(HcfCipherDesGeneratorSpiOpensslImpl *i
 
 static HcfResult InitCipherData(enum HcfCryptoMode opMode, CipherData **cipherData)
 {
+    FreeCipherData(cipherData);
     HcfResult ret = HCF_INVALID_PARAMS;
 
     *cipherData = (CipherData *)HcfMalloc(sizeof(CipherData), 0);
@@ -239,6 +241,7 @@ static HcfResult EngineCipherInit(HcfCipherGeneratorSpi *self, enum HcfCryptoMod
         LOGD("[error] Set padding failed.");
         goto clearup;
     }
+    cipherImpl->initFlag = INITIALIZED;
     return HCF_SUCCESS;
 
 clearup:
@@ -252,6 +255,10 @@ static HcfResult AllocateOutput(HcfBlob *input, HcfBlob *output)
 {
     uint32_t outLen = DES_BLOCK_SIZE;
     if (HcfIsBlobValid(input)) {
+        if (outLen > UINT32_MAX - input->len) {
+            LOGE("Input length overflow.");
+            return HCF_ERR_PARAMETER_CHECK_FAILED;
+        }
         outLen += input->len;
     }
     output->data = (uint8_t *)HcfMalloc(outLen, 0);
@@ -275,9 +282,15 @@ static HcfResult EngineUpdate(HcfCipherGeneratorSpi *self, HcfBlob *input, HcfBl
     }
 
     HcfCipherDesGeneratorSpiOpensslImpl *cipherImpl = (HcfCipherDesGeneratorSpiOpensslImpl *)self;
+    if (cipherImpl->initFlag != INITIALIZED) {
+        LOGW("Cipher instance may not have been initialized, "
+            "ensure init interface of Cipher instance is executed completely!");
+    }
+
     CipherData *data = cipherImpl->cipherData;
     if (data == NULL) {
-        LOGE("Cipher data object is null.");
+        LOGE("The data of Cipher instance is NULL, "
+            "please check if init interface of Cipher instance is executed completely!");
         return HCF_INVALID_PARAMS;
     }
     HcfResult res = AllocateOutput(input, output);
@@ -341,9 +354,15 @@ static HcfResult EngineDoFinal(HcfCipherGeneratorSpi *self, HcfBlob *input, HcfB
         return HCF_INVALID_PARAMS;
     }
     HcfCipherDesGeneratorSpiOpensslImpl *cipherImpl = (HcfCipherDesGeneratorSpiOpensslImpl *)self;
+    if (cipherImpl->initFlag != INITIALIZED) {
+        LOGW("Cipher instance may not have been initialized, "
+            "ensure init interface of Cipher instance is executed completely!");
+    }
+
     CipherData *data = cipherImpl->cipherData;
     if (data == NULL) {
-        LOGE("Cipher data object is null.");
+        LOGE("The data of Cipher instance is NULL, "
+            "please check if init interface of Cipher instance is executed completely!");
         return HCF_INVALID_PARAMS;
     }
 
@@ -404,7 +423,7 @@ static HcfResult SetDesCipherSpecUint8Array(HcfCipherGeneratorSpi *self, CipherS
     return HCF_NOT_SUPPORT;
 }
 
-HcfResult HcfCipherDesGeneratorSpiCreate(CipherAttr *attr, HcfCipherGeneratorSpi **generator)
+HcfResult HcfCipherDesGeneratorSpiCreate(HcfCipherAttr *attr, HcfCipherGeneratorSpi **generator)
 {
     if ((attr == NULL) || (generator == NULL)) {
         LOGE("Invalid input parameter.");
@@ -416,7 +435,7 @@ HcfResult HcfCipherDesGeneratorSpiCreate(CipherAttr *attr, HcfCipherGeneratorSpi
         LOGE("Failed to allocate returnImpl memroy.");
         return HCF_ERR_MALLOC;
     }
-    (void)memcpy_s(&returnImpl->attr, sizeof(CipherAttr), attr, sizeof(CipherAttr));
+    (void)memcpy_s(&returnImpl->attr, sizeof(HcfCipherAttr), attr, sizeof(HcfCipherAttr));
     returnImpl->base.init = EngineCipherInit;
     returnImpl->base.update = EngineUpdate;
     returnImpl->base.doFinal = EngineDoFinal;

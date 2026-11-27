@@ -24,16 +24,23 @@
 #include "detailed_dsa_key_params.h"
 #include "detailed_rsa_key_params.h"
 #include "detailed_ecc_key_params.h"
+#ifdef CRYPTO_MBEDTLS
+#include "mbedtls_ecc_asy_key.h"
+#else
 #include "dh_asy_key_generator_openssl.h"
 #include "dsa_asy_key_generator_openssl.h"
 #include "alg_25519_asy_key_generator_openssl.h"
 #include "ml_kem_asy_key_generator_openssl.h"
 #include "ml_dsa_asy_key_generator_openssl.h"
 #include "ecc_asy_key_generator_openssl.h"
+#include "rsa_asy_key_generator_openssl.h"
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
+#include "sm2_asy_key_generator_openssl.h"
+#endif
+
+#endif
 #include "key_utils.h"
 #include "params_parser.h"
-#include "rsa_asy_key_generator_openssl.h"
-#include "sm2_asy_key_generator_openssl.h"
 #include "log.h"
 #include "memory.h"
 #include "utils.h"
@@ -75,15 +82,21 @@ typedef struct {
 } HcfAsyKeyGenAbility;
 
 static const HcfAsyKeyGenAbility ASY_KEY_GEN_ABILITY_SET[] = {
+#ifdef CRYPTO_MBEDTLS
+    { HCF_ALG_ECC, HcfAsyKeyGeneratorSpiMbedtlsEccCreate },
+#else
     { HCF_ALG_RSA, HcfAsyKeyGeneratorSpiRsaCreate },
     { HCF_ALG_ECC, HcfAsyKeyGeneratorSpiEccCreate },
     { HCF_ALG_DSA, HcfAsyKeyGeneratorSpiDsaCreate },
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     { HCF_ALG_SM2, HcfAsyKeyGeneratorSpiSm2Create },
+#endif
     { HCF_ALG_ED25519, HcfAsyKeyGeneratorSpiEd25519Create },
     { HCF_ALG_X25519, HcfAsyKeyGeneratorSpiX25519Create },
     { HCF_ALG_DH, HcfAsyKeyGeneratorSpiDhCreate },
     { HCF_ALG_ML_KEM, HcfAsyKeyGeneratorSpiMlKemCreate },
     { HCF_ALG_ML_DSA, HcfAsyKeyGeneratorSpiMlDsaCreate }
+#endif
 };
 
 typedef struct {
@@ -109,7 +122,9 @@ static const KeyTypeAlg KEY_TYPE_MAP[] = {
     { HCF_ALG_DSA_1024, HCF_DSA_KEY_SIZE_1024, HCF_ALG_DSA },
     { HCF_ALG_DSA_2048, HCF_DSA_KEY_SIZE_2048, HCF_ALG_DSA },
     { HCF_ALG_DSA_3072, HCF_DSA_KEY_SIZE_3072, HCF_ALG_DSA },
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
     { HCF_ALG_SM2_256, HCF_ALG_SM2_256, HCF_ALG_SM2 },
+#endif
     { HCF_ALG_ECC_BP160R1, HCF_ALG_ECC_BP160R1, HCF_ALG_ECC },
     { HCF_ALG_ECC_BP160T1, HCF_ALG_ECC_BP160T1, HCF_ALG_ECC },
     { HCF_ALG_ECC_BP192R1, HCF_ALG_ECC_BP192R1, HCF_ALG_ECC },
@@ -514,7 +529,11 @@ static bool IsParamsSpecValid(const HcfAsyKeyParamsSpec *paramsSpec)
     }
     if (strcmp(paramsSpec->algName, ALG_NAME_DSA) == 0) {
         return IsDsaParamsSpecValid(paramsSpec);
-    } else if (strcmp(paramsSpec->algName, ALG_NAME_ECC) == 0 || strcmp(paramsSpec->algName, ALG_NAME_SM2) == 0) {
+    } else if (strcmp(paramsSpec->algName, ALG_NAME_ECC) == 0
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
+               || strcmp(paramsSpec->algName, ALG_NAME_SM2) == 0
+#endif
+    ) {
         return IsEccParamsSpecValid(paramsSpec);
     } else if (strcmp(paramsSpec->algName, ALG_NAME_RSA) == 0) {
         return IsRsaParamsSpecValid(paramsSpec);
@@ -1240,7 +1259,9 @@ static HcfResult CreateAsyKeyParamsSpecImpl(const HcfAsyKeyParamsSpec *paramsSpe
         case HCF_ALG_DSA:
             ret = CreateDsaParamsSpecImpl(paramsSpec, impl);
             break;
+#if !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_SIGN) || !defined(CRYPTO_FRAMEWORK_DISABLE_SM2_ENC)
         case HCF_ALG_SM2:
+#endif
         case HCF_ALG_ECC:
             ret = CreateEccParamsSpecImpl(paramsSpec, impl);
             break;
@@ -1448,7 +1469,7 @@ HcfResult HcfAsyKeyGeneratorCreate(const char *algoName, HcfAsyKeyGenerator **re
     }
 
     HcfAsyKeyGenParams params = { 0 };
-    if (ParseAndSetParameter(algoName, &params, ParseAsyKeyGenParams) != HCF_SUCCESS) {
+    if (HcfParseAndSetParameter(algoName, &params, ParseAsyKeyGenParams) != HCF_SUCCESS) {
         LOGE("Failed to parse params!");
         return HCF_INVALID_PARAMS;
     }
@@ -1497,7 +1518,7 @@ HcfResult HcfAsyKeyGeneratorBySpecCreate(const HcfAsyKeyParamsSpec *paramsSpec, 
         return HCF_INVALID_PARAMS;
     }
     HcfAsyKeyGenParams params = { 0 };
-    if (ParseAlgNameToParams(paramsSpec->algName, &params) != HCF_SUCCESS) {
+    if (HcfParseAlgNameToParams(paramsSpec->algName, &params) != HCF_SUCCESS) {
         LOGE("Failed to parse params!");
         return HCF_INVALID_PARAMS;
     }

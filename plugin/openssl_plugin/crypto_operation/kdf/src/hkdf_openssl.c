@@ -267,6 +267,7 @@ static HcfResult OpensslHkdf(OpensslHkdfSpiImpl *self, HcfBlob *output)
 
     kdf = OpensslEvpKdfFetch(NULL, "HKDF", NULL);
     if (kdf == NULL) {
+        HcfPrintOpensslError();
         LOGE("kdf fetch failed");
         return HCF_ERR_CRYPTO_OPERATION;
     }
@@ -274,6 +275,7 @@ static HcfResult OpensslHkdf(OpensslHkdfSpiImpl *self, HcfBlob *output)
     kctx = OpensslEvpKdfCtxNew(kdf);
     OpensslEvpKdfFree(kdf);
     if (kctx == NULL) {
+        HcfPrintOpensslError();
         LOGE("kdf ctx new failed");
         return HCF_ERR_CRYPTO_OPERATION;
     }

@@ -264,6 +264,7 @@ HWTEST_F(CryptoPbkdf2Test, CryptoPbkdf2Test8, TestSize.Level0)
     HcfObjDestroy(generator);
 }
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
 HWTEST_F(CryptoPbkdf2Test, CryptoPbkdf2Test9, TestSize.Level0)
 {
     HcfKdf *generator = nullptr;
@@ -286,6 +287,7 @@ HWTEST_F(CryptoPbkdf2Test, CryptoPbkdf2Test9, TestSize.Level0)
     EXPECT_EQ(ret, HCF_SUCCESS);
     HcfObjDestroy(generator);
 }
+#endif
 
 HWTEST_F(CryptoPbkdf2Test, CryptoPbkdf2Test10, TestSize.Level0)
 {
@@ -475,6 +477,7 @@ HWTEST_F(CryptoPbkdf2Test, CryptoPbkdf2TestError9, TestSize.Level1)
     HcfObjDestroy(generator);
 }
 
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
 HWTEST_F(CryptoPbkdf2Test, CryptoPbkdf2TestError10, TestSize.Level1)
 {
     HcfKdf *generator = nullptr;
@@ -482,6 +485,7 @@ HWTEST_F(CryptoPbkdf2Test, CryptoPbkdf2TestError10, TestSize.Level1)
     EXPECT_NE(ret, HCF_SUCCESS);
     HcfObjDestroy(generator);
 }
+#endif
 
 HWTEST_F(CryptoPbkdf2Test, CryptoPbkdf2TestError11, TestSize.Level1)
 {
@@ -527,7 +531,9 @@ std::vector<std::string> pbkdf2MdAlgoParams = {
     "SHA3-384",
     "SHA3-512",
     "MD5",
+#ifndef CRYPTO_FRAMEWORK_DISABLE_SM3
     "SM3",
+#endif
 };
 
 INSTANTIATE_TEST_SUITE_P(CryptoPbkdf2TestParam, CryptoPbkdf2Test,

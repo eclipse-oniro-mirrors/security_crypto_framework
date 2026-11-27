@@ -47,7 +47,6 @@ static const char *MbedtlsGetMdClass(void)
 static mbedtls_md_context_t *MbedtlsGetMdCtx(HcfMdSpi *self)
 {
     if (!HcfIsClassMatch((HcfObjectBase *)self, MbedtlsGetMdClass())) {
-        LOGE("Class is not match.");
         return NULL;
     }
 
@@ -73,7 +72,6 @@ static HcfResult MbedtlsEngineUpdateMd(HcfMdSpi *self, HcfBlob *input)
 static HcfResult MbedtlsEngineDoFinalMd(HcfMdSpi *self, HcfBlob *output)
 {
     if ((self == NULL) || (output == NULL)) {
-        LOGE("The input self ptr is NULL!");
         return HCF_INVALID_PARAMS;
     }
     mbedtls_md_context_t *ctx = MbedtlsGetMdCtx(self);
@@ -107,12 +105,10 @@ static uint32_t MbedtlsEngineGetMdLength(HcfMdSpi *self)
 {
     mbedtls_md_context_t *ctx = MbedtlsGetMdCtx(self);
     if (ctx == NULL) {
-        LOGD("The CTX is NULL!");
         return HCF_MBEDTLS_INVALID_MD_LEN;
     }
     uint8_t outputLen = mbedtls_md_get_size(mbedtls_md_info_from_ctx(ctx));
     if ((outputLen == 0) || (outputLen > HCF_EVP_MAX_MD_SIZE)) {
-        LOGD("Get the overflow path length is %d in mbedtls!", outputLen);
         return HCF_MBEDTLS_INVALID_MD_LEN;
     }
 
@@ -122,11 +118,9 @@ static uint32_t MbedtlsEngineGetMdLength(HcfMdSpi *self)
 static void MbedtlsDestroyMd(HcfObjectBase *self)
 {
     if (self == NULL) {
-        LOGE("The input self ptr is NULL!");
         return;
     }
     if (!HcfIsClassMatch(self, MbedtlsGetMdClass())) {
-        LOGE("Class is not match.");
         return;
     }
     if (MbedtlsGetMdCtx((HcfMdSpi *)self) != NULL) {
@@ -165,7 +159,6 @@ int MbedtlsEvpDigestInitEx(mbedtls_md_context_t *ctx, const char *mbedtlsAlgoNam
 HcfResult MbedtlsMdSpiCreate(const char *mbedtlsAlgoName, HcfMdSpi **spiObj)
 {
     if (spiObj == NULL) {
-        LOGE("Invalid input parameter.");
         return HCF_INVALID_PARAMS;
     }
     MbedtlsMdSpiImpl *returnSpiImpl = (MbedtlsMdSpiImpl *)HcfMalloc(sizeof(MbedtlsMdSpiImpl), 0);

@@ -773,6 +773,7 @@ static HcfResult GenerateDhPubAndPriKey(int32_t dhId, HcfOpensslDhPubKey **retur
     HcfResult ret = GenerateDhEvpKey(dhId, &pkey);
     if (ret != HCF_SUCCESS) {
         LOGE("Generate DH EVP_PKEY failed.");
+        HcfPrintOpensslError();
         return ret;
     }
 

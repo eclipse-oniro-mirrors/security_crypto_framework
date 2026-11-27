@@ -260,6 +260,7 @@ HcfResult HcfECCCommonParamSpecCreate(HcfAsyKeyGenParams *params, HcfEccCommPara
     EC_GROUP *ecGroup = OpensslEcGroupNewByCurveName(curveId);
     if (ecGroup == NULL) {
         LOGE("Create ecGroup failed.");
+        HcfPrintOpensslError();
         return HCF_ERR_CRYPTO_OPERATION;
     }
     HcfEccCommParamsSpecSpi *object = BuildEccCommonParamObject();
